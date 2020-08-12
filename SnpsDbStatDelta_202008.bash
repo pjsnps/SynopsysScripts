@@ -1,44 +1,34 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 
 #SCRIPT:     SnpsDbStatDelta_202008.bash
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-07-26          # 
-#VERSION:    2008081812Z         # :! date -u +\%y\%m\%d\%H\%MZ
-#GREPVCKSUM: ____under dev# :! grep -v grepvcksum <script> | cksum
+#VERSION:    2008121709Z         # :! date -u +\%y\%m\%d\%H\%MZ
+#GREPVCKSUM: 1383907451 14645    # :! grep -v grepvcksum <script> | cksum
+#CHANGELOG:  2008121709Z pj add accept pipe input, other cleanup.
 
-#PURPOSE:    Intended to help show relevant db activity during hours-long very quiet periods during Black Duck upgrades/migrations (like when a huge 1TB table is being copied). 
-#PURPOSE:    Intended to try to show changes in database stats between exactly two runs of a db stats command which were output to the same file. For each cell with a numerical value, substracts the earlier value from the later value.  Dates are subtracted and the interval is reported in seconds (that is, the time interval between the two runs or loops of the stats gathering script)..
+#PURPOSE:    Intended to help show relevant db activity during hours-long very quiet periods during Black Duck upgrades/migrations (like when a huge 1TB table is being copied). Intended to show changes in database stats between exactly two runs of a db stats command which were output to the same file. For each cell with a numerical value, substracts the earlier value from the later value.  Dates are subtracted and the interval is reported in seconds (that is, the time interval between the two runs or loops of the stats gathering script).
+
+#REQUIRES:    Two runs of a postgresql db stats query as input to this script, so that changes in the stats that occured between those two runs can be calculated. .   
+#RECOMMENDED: n/a
 
 #USAGE: See REFERENCE section at bottom of this script.
-#USAGE: For now, first pull out the one stats query that was run twice, with like, for pg_stats_database: 
+#USAGE: Simple option: First run SynopsysMonitorDbActivity_202007.bash and output to a .log file.  Then pull out of that log file the data from the two runs of db stats query (for example, for pg_stats_database), into a file named "input":
 #USAGE:   cat SynopsysMonitorDbActivity_202007.bash_20200727Mon_sup-pjalajas-hub.dc1.lan.log | grep -zPo '(?s)^pg_stat_database\.\.\..*?rows\)' > input
-#USAGE: Edit CONFIGs, then:
-#USAGE: bash SnpsDbStatDelta_202008.bash | less -inRF  
-#USAGE: bash SnpsDbStatDelta_202008.bash | grep -e "^now\ " -e bds_hub\  # show just changes in bds_hub db (need escape to delimit from bds_hub_report if exists).
+#USAGE: Then, edit CONFIGs below, if any, then run, for example:
+#USAGE: bash SnpsDbStatDelta_202008.bash | less -inRF # or:
+#USAGE: bash SnpsDbStatDelta_202008.bash | grep -e "^now\ " -e bds_hub\  # show just changes in bds_hub db (need escape after bds_hub to distinguish from bds_hub_report if it exists).
+#USAGE: Advanced:  date ; hostname -f ; pwd ; whoami ; ./SynopsysMonitorDbActivity_202007.bash 15s |& tee -a /tmp/SynopsysMonitorDbActivity_202007.bash_$(hostname -f)_$(date --utc +%Y%m%d%H%M%SZ%a)PJ.out |& grep -zPo '(?s)^pg_statio_user_tables\.\.\..*?rows\)' |& ./SnpsDbStatDelta_202008.bash |& tee -a /tmp/SnpsDbStatDelta_202008.bash_sup-pjalajas-hub.dc1.lan_20200809162924ZSunPJ.outDelta_202008.bash_$(hostname -f)_$(date --utc +%Y%m%d%H%M%SZ%a)PJ.out
+#USAGE: For the grep -zPo filter, can use any of these "cmd" (some are more appropriate for deltas than others): v_hub_script_status v_bootstrap_script_status pg_stat_database pg_locks pg_statio_user_tables pg_stat_xact_user_tables pg_stat_user_indexes pg_statio_user_sequences pg_stat_user_functions pg_stat_xact_user_functions pg_stat_replication pg_stat_progress_vacuum pg_stat_database_conflicts pg_stat_activity
 #USAGE: Works until year 2029 (see "202." lines below). 
 
-#CHANGELOG: 2008081812Z pj trying to change to pipe input
-
-#TODO:  Enhance so this can walk through an entire file that has 2 runs of a few different db stats commands. 
+#TODO:  Enhance so this can walk through an entire db stats file that has 2 runs of several different db stats commands. 
+#TODO:  Watch out for empty cells, like stats_reset; and columns with spaces, like dates.
 
 #CONFIG
-#input=./input # path/filename.ext of input file containing exactly 2 runs of the db stats command separated by some time period (few seconds or minutes)
-#PSQL="/usr/bin/psql" # db connection not needed for this script
-#DBCONN=" -h 127.0.0.1 -p 55436 -U blackduck -d bds_hub " # db connection not needed for this script
-#msleep=5s  # sleep between loops, increase if not enough changes to make you comfortable with progress
-#mloops=2   # 2 is good.  Just run it again later.
 
 #FUNCTIONS
-
-help_wanted() {
-    [ "$#" -ge "1" ] && [ "$1" = '-h' ] || [ "$1" = '--help' ] || [ "$1" = "-?" ]
-}
-
-  if help_wanted "$@"; then
-    usage
-    exit 0
-  fi
 
 #INIT
 set -o errexit # exit immediately when it encounters a non-zero exit code
@@ -47,27 +37,14 @@ date ; date --utc ; hostname -f ; pwd ; whoami ;
 
 #MAIN
 
-echo
 #echo Input:
 #cat input ;  # TESTING
 mindex=0 ; 
-#Watch out for empty cells, like stats_reset; and columns with spaces, like dates.
-#TODO: allow pipe in:  while read line ; do echo "$line" ; done < "${1:-/dev/stdin}"
-#ORIGINAL, WORKS:  read -a myarray < <(grep \| $input | tr -s \  | sed -re 's/(202.-..-..) /\1T/g;s/\| *\|/| _ |/g;s/\| *\|/| _ |/g;s/\| $/| _/g' | xargs) ;  # head -n 4 for TESTING; need to remove spaces within cells
 unset line
 unset input
 input=""
-#IFS=$'\n'
-#while read -r line
-#do
-  #input="$(echo -e "${input}${line}")\n"
-  #input="$(echo -e "${input}${line}")"
-  #input="$(echo -e "${input}\n")"
-#done < "${1:-/dev/stdin}"
-input="$(cat)" # wow, so easy to pipe in
-echo
-#echo -e "\$input:\n${input}"
-#echo
+input="$(cat)" # wow, so easy to pipe in...TODO: too easy?
+#echo -e "\$input:\n${input}"; echo
 mcols=$(echo "$input" | grep "^\s*now\s*" | head -n 1 | wc -w) ;  # count number of space-separated "words" including | in pg output header row
 mrowsperloop=$(($(echo "$input" | grep \| | wc -l)/2)) ;  # head -n 4 for TESTING, one header, 3 data = 2 loops; just count psql output with | 
 mcellsperloop=$((mcols*mrowsperloop)) ; 
@@ -77,22 +54,20 @@ mcellsperloop=$((mcols*mrowsperloop)) ;
 #echo cells per loop: $mcellsperloop ;  # TESTING
 #unset myarray; 
 declare -a myarray
-#read -a myarray < <(grep \| $input | tr -s \  | sed -re 's/(202.-..-..) /\1T/g;s/\| *\|/| _ |/g;s/\| *\|/| _ |/g;s/\| $/| _/g' | xargs) ;  # head -n 4 for TESTING; need to remove spaces within cells
-read -a myarray < <(echo "${input}" | grep \| | tr -s \  | sed -re 's/(202.-..-..) /\1T/g;s/\| *\|/| _ |/g;s/\| *\|/| _ |/g;s/\| $/| _/g' | xargs) ;  # head -n 4 for TESTING; need to remove spaces within cells
-#echo "\$myarray:"
-#echo "${myarray[@]}" ;  # TESTING.  Can be big, maybe comment out; this prints all the data on one row of output, first all the cells of the first run, then all the cells of the second run.
+read -a myarray < <(echo "${input}" | grep \| | tr -s \  | sed -re 's/(202.-..-..) /\1T/g;s/\| *\|/| _ |/g;s/\| *\|/| _ |/g;s/\| $/| _/g' | xargs) 
+#echo "\$myarray:" # TESTING
+#echo "${myarray[@]}" ;  # TESTING.  Can be big; this prints all the data on one row of output, first all the cells of the first run, then all the cells of the second run.
 echo
 echo Output:
 for mrow in $(seq 1 ${mrowsperloop}) ; 
 do for mcell in $(seq 1 ${mcols}) ; 
    do subtrahendindex=$((mindex)) ;  # array index of cell in first loop
-      minuendindex=$((mindex+mcellsperloop-1)) ;  # array index of cell in second loop; TODO: off by two?(!?)?
       minuendindex=$((mindex+mcellsperloop)) ;  # array index of cell in second loop; TODO: off by two?(!?)?
       #echo ; echo "====================" ; echo row:$mrow :: cell:$mcell :: secondindex:$minuendindex :: firstindex:$subtrahendindex :: secondvalue:${myarray[${minuendindex}]} :: firstvalue:${myarray[${subtrahendindex}]} ;  echo "====================" ; echo ; # TESTING
       #Start with index 0, the first cell of first loop, if it's numeric, then subtract that from the first cell of the second loop (using the much higher array index), 
       if [[ ${myarray[${minuendindex}]} =~ ^-?[0-9]+[.]?([0-9]+)?$ ]] && [[ ${myarray[${subtrahendindex}]} =~ ^-?[0-9]+[.]?([0-9]+)?$ ]] ; then 
         #is numeric, so do substract 
-        #replace 0 with .; empty with _
+        #replace 0 with .; replace empty cell with _
         mdiff="$((${myarray[${minuendindex}]}-${myarray[${subtrahendindex}]}))" ; 
         if [[ "$mdiff" -gt "0" ]] ; then 
           echo -n "$((${myarray[${minuendindex}]}-${myarray[${subtrahendindex}]})) " ; 
@@ -102,7 +77,6 @@ do for mcell in $(seq 1 ${mcols}) ;
         #Dates can have variable number of nanoseconds
         #  + [[ 2020-08-02T19:23:26.248555+00 =~ ^202.-..-..T..:..:..\.......\+..$ ]]
         #                                + [[ 2020-08-02T19:23:17.86022+00 =~ ^202.-..-..T..:..:..\.......\+..$ ]]
-      #elif [[ ${myarray[${minuendindex}]} =~ ^202.-..-..T..:..:..\.......\+..$ ]] && [[ ${myarray[${subtrahendindex}]} =~ ^202.-..-..T..:..:..\.......\+..$ ]] ; then 
       elif [[ ${myarray[${minuendindex}]} =~ ^202.-..-..T..:..:..\.[0-9]*\+..$ ]] && [[ ${myarray[${subtrahendindex}]} =~ ^202.-..-..T..:..:..\.[0-9]*\+..$ ]] ; then 
         echo -n "$(($(date +%s -d "${myarray[${minuendindex}]}")-$(date +%s -d "${myarray[${subtrahendindex}]}")))_seconds "
       else 
@@ -123,10 +97,7 @@ now        |  inet_server_addr  |  cmd               |  loop  |  datid  |  datna
 
 
 
-
-
-
-Collect several kinds of stats.  This runs twice, with a few seconds sleep between loops:
+Collect several kinds of stats.  That script runs the db stats queries twice, with a few seconds sleep between loops:
 $ ./SynopsysMonitorDbActivity_202007.bash |& tee -a /tmp/SynopsysMonitorDbActivity_202007.bash_$(date --utc +%Y%m%d%a)_$(hostname -f).log 
 
 Create a file of one of the kinds of stats from the log file from above, for example the pg_stat_database view:
@@ -161,4 +132,3 @@ now        |  inet_server_addr  |  cmd               |  loop  |  datid  |  datna
 9_seconds  |  10.0.0.66         |  pg_stat_database  |  1     |  .      |  template0       |  .            |  .            |  .              |  .          |  .         |  .             |  .            |  .             |  .            |  .            |  .          |  .           |  .           |  .          |  .              |  .               |  _$
 9_seconds  |  10.0.0.66         |  pg_stat_database  |  1     |  .      |  bds_hub_report  |  .            |  2            |  .              |  .          |  69        |  1157          |  11           |  .             |  .            |  .            |  .          |  .           |  .           |  .          |  .              |  .               |  0_seconds$
 9_seconds  |  10.0.0.66         |  pg_stat_database  |  1     |  .      |  bdio            |  .            |  17           |  17             |  .          |  .         |  .             |  .            |  .             |  .            |  .            |  .          |  .           |  .           |  .          |  .              |  .               |  0_seconds$
-[pjalajas@sup-pjalajas-hub 00811525_Install2020.6.0]$ 
