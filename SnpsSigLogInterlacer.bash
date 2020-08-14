@@ -4,7 +4,7 @@
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-08-13          # move from command line hacks to (more) formal script 
-#VERSION:    2008141347Z         # :! date -u +\%y\%m\%d\%H\%MZ
+#VERSION:    2008141727Z         # :! date -u +\%y\%m\%d\%H\%MZ
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
 #CHANGELOG:  try to make sed non-greedy...hard 
 
@@ -26,7 +26,8 @@
 #              2020-08-12T20:01:37Z
 #              2020-08-13T19:54:11.119Z
 #TODO: ____
-#  Hope to deal with timestamps formats like this soon enough:
+#2008141347Z  Hope to deal with timestamps formats like this soon enough:
+#     2020-08-14 00:02:46,546  protex logs
 #     Apr 4, 2020
 #     "13-08-2020 00:00:00"
 #      ?:  A /var/cache/nginx/proxy_temp/8/13 = month/day? 
@@ -65,7 +66,7 @@ echo "TODO___: look for tz in input line; if not found, presume UTC/Z, but appen
 while read line ; 
 do
   #TODO:  to make sed non greedy, so that only the first date in each log line is used, maybe try to find line char pos for each datetime format?  Or awk? 
-  #echo "input line :: $line"
+  echo "input line :: $line"
 #  Process in this order (subject to change, but keep this in same order as grep and sed list below for easier comparison):
 #              13/Aug/2020:00:01:37 +0000
 #              2020/08/06 00:03:25
@@ -79,20 +80,23 @@ do
         -e 's#(^.*)(20[0-9]{2}-[0-1][0-9]-[0-3][0-9]) ([0-2][0-9]:[0-5][0-9]:[0-5][0-9]),([0-9]{1,9})(Z)(\[GMT\])(.*$)#\2 \3.\4 UTC#' \
         -e 's#(^.*)(20[0-9]{2}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9])(Z)(.*$)#\2 UTC#' \
         -e 's#(^.*)(20[0-9]{2}-[0-1][0-9]-[0-3][0-9])T([0-2][0-9]:[0-5][0-9]:[0-5][0-9]).([0-9]{1,9})(Z)(.*$)#\2 \3.\4 UTC#' \
+        -e 's#(^.*)(20[0-9]{2}-[0-1][0-9]-[0-3][0-9]) ([0-2][0-9]:[0-5][0-9]:[0-5][0-9]),([0-9]{1,9})(.*$)#\2 \3.\4 UTC#' \
     )" 
   #TODO: __ append ? if no tz indicated in input
   #mdate="$(echo "${mworkingdate}" | xargs -I'_' date --utc +%Y-%m-%dT%H:%M:%S.%NZ%a -d "_")" # not reversible date format
   mdate="$(echo "${mworkingdate}" | xargs -I'_' date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a -d "_")" # reversible date format, can pipe back into date -d if needed
   #echo "$mdate :: $mworkingdate :: $line" #TESTING 
+  # working on 2020-08-14 00:02:46,546
   echo "$mdate :: $line" #PRODUCTION
 done < <(cat |& \
     grep \
-        -e "We can process only these kinds of lines:" \
+        -e "We can process only these kinds of lines, so far:" \
         -e "[0-3][0-9]/[A-Z][a-z]\{2\}/20[0-9]\{2\}:[0-2][0-9]:[0-5][0-9]:[0-5][0-9] +0000" \
         -e "[0-9]\{4\}/[0-9]\{2\}/[0-9]\{2\} [0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}" \
         -e "20[0-9]\{2\}-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9],[0-9]\{1,9\}Z\[GMT\]" \
         -e "20[0-9]\{2\}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9]\{1,9\}Z" \
         -e "20[0-9]\{2\}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]Z" \
+        -e "20[0-9]\{2\}-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9],[0-9]\{1,9\}" \
     |& \
     cut -c1-$mcut) |& \
 sort -k1
@@ -102,6 +106,7 @@ sort -k1
 exit
 #REFERENCE
 put notes here
+        -e ".*" \
         -e 's#(^.*)(20[0-9]{2}-[0-1][0-9]-[0-3][0-9])T([0-2][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9]\{1,9\})(Z)(.*$)#\2 \3.\4 UTC#' \
     grep \
          -e "[0-3][0-9]/[A-Z][a-z]\{2\}/20[0-9]\{2\}:[0-2][0-9]:[0-5][0-9]:[0-5][0-9] +0000" \
