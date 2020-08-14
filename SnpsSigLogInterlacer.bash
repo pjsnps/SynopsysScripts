@@ -4,7 +4,7 @@
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-08-13          # move from command line hacks to (more) formal script 
-#VERSION:    2008140607Z         # :! date -u +\%y\%m\%d\%H\%MZ
+#VERSION:    2008141347Z         # :! date -u +\%y\%m\%d\%H\%MZ
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
 #CHANGELOG:  try to make sed non-greedy...hard 
 
@@ -38,17 +38,21 @@
 #REQUIRES:   ____
 #RECOMMENDED: ____
 
-#TODO:  Address timezones...won't be easy, will have to make assumptions. Appened ? to date if no TZ indicated
-#TODO:  Address can't deal with lines without timestamps, like java traces.  Ignore for now.  Maybe can wrap up such lines and append to last prior line with timestamp?(!)
-#       TODO: research log4j mods to force prepending timestamp to ALL lines. 
-
-#____
+#TODO: 
+#Plan to edit all log4j.properties for consisent date formats and log-line layouts.  
+#Plan to create dev containers in my own image. 
+#Maybe create a maintenance container for this and other tools. 
+#Process each log file separately?  Like gc log may need processing to convert seconds-from-jvm-start to utc. 
+#Address timezones...won't be easy, will have to make assumptions. Appened ? to date if no TZ indicated
+#Address can't deal with lines without timestamps, like java traces.  Ignore for now.  Maybe can wrap up such lines and append to last prior line with timestamp?(!)
+#    research log4j mods to force prepending timestamp to ALL lines. 
 
 #CONFIG
 mcut=1000 # max line width before date parsing (if date is after this number, it will not be converted)
-#TODO: __ add some CONFIGs to command line option line ${1:-1000} or whatever the right way to set a default is
+#TODO: __ move/add some CONFIGs to command line option line ${1:-1000} or whatever the right way to set a default is
 
 #FUNCTIONS
+#none so far
 
 #INIT
 set -o errexit # exit immediately when it encounters a non-zero exit code
