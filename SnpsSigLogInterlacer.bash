@@ -12,7 +12,7 @@
 
 #USAGE:  Download System Logs .zip.  Unzip into an empty directory.  Change directory to top of that directory.  find . |& grep filter names/ext | xargs -I'%' cat -A '%' |& <this script> # TODO ___
 #USAGE:  Edit CONFIGs below. 
-#USAGE:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ find /home/pjalajas/Documents/dev/customers/netapp/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257 -maxdepth 5 -type f |& grep -i -e "\.log$" -e "\.txt$" |& grep -e "2020-08-13" |& xargs -I'%' cat -A '%' |& grep -e "2020-08" -e "2020/08" |& ./SnpsSigLogInterlacer.bash |& less -inRF
+#USAGE:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ find /home/pjalajas/Documents/dev/customers/customer/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257 -maxdepth 5 -type f |& grep -i -e "\.log$" -e "\.txt$" |& grep -e "2020-08-13" |& xargs -I'%' cat -A '%' |& grep -e "2020-08" -e "2020/08" |& ./SnpsSigLogInterlacer.bash |& less -inRF
 #USAGE:  OR: run docker container logs |& TODO__   |& <this script>
 #USAGE: ____   
 
@@ -110,7 +110,7 @@ put notes here
     |& \
 
 grep -v "^\s*$" |&
-[pjalajas@sup-pjalajas-hub SynopsysScripts]$ find /home/pjalajas/Documents/dev/customers/netapp/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257 -maxdepth 5 -type f |& grep -i -e "\.log$" -e "\.txt$" |& grep -e "2020-08-13" |& xargs -I'%' head -n 100 '%' |& cat -A |& grep -e "2020-08" -e "2020/08" -e "Aug/2020" |& ./SnpsSigLogInterlacer.bash |& head | sed -re 's#(^.*)([0-3][0-9])/([A-Z][a-z]{2})/(20[0-9]{2}):([0-2][0-9]:[0-5][0-9]:[0-5][0-9]) \+0000(.*$)#\3 \2 \4 \5.000Z#' | xargs -I'_' date +%Y-%m-%dT%H:%M:%S.%NZ -d "_" 2> /dev/null
+[pjalajas@sup-pjalajas-hub SynopsysScripts]$ find /home/pjalajas/Documents/dev/customers/customer/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257 -maxdepth 5 -type f |& grep -i -e "\.log$" -e "\.txt$" |& grep -e "2020-08-13" |& xargs -I'%' head -n 100 '%' |& cat -A |& grep -e "2020-08" -e "2020/08" -e "Aug/2020" |& ./SnpsSigLogInterlacer.bash |& head | sed -re 's#(^.*)([0-3][0-9])/([A-Z][a-z]{2})/(20[0-9]{2}):([0-2][0-9]:[0-5][0-9]:[0-5][0-9]) \+0000(.*$)#\3 \2 \4 \5.000Z#' | xargs -I'_' date +%Y-%m-%dT%H:%M:%S.%NZ -d "_" 2> /dev/null
 2020-08-13T23:47:29.000000000Z
 
 
@@ -123,7 +123,7 @@ grep -v "^\s*$" |&
 
 2020-08-13T00:02:32.689Z : [f6b2263d986c] 2020-08-13 00:02:32689Z[GMT] [scan-upload-1] INFO com.blackducksoftware.scan.siggen.impl.BlackDuckInputOutputService - Sta
 rting to process the chunk 2165f2a9-ab63-4fc5-8825-4075eb202d2f in mode REPLACE$
-2020-08-13T00:02:32....? : [739738e14cc0] 2020/08/13 00:02:32 [warn] 101#101: *591651 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000001165, client: 10.255.0.2, server: localhost, request: "POST /api/bom-import HTTP/1.1", host: "blackduck.eng.netapp.com"$
+2020-08-13T00:02:32....? : [739738e14cc0] 2020/08/13 00:02:32 [warn] 101#101: *591651 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000001165, client: 10.255.0.2, server: localhost, request: "POST /api/bom-import HTTP/1.1", host: "blackduck.eng.customer.com"$
 2020-08-13T00:02:32.841Z : [f6b2263d986c] 2020-08-13 00:02:32841Z[GMT] [scan-upload-1] INFO com.blackducksoftware.scan.siggen.impl.BlackDuckInputOutputService - AddRemoveEvent: Original CodeLocationId: f5b69908-af86-345d-9181-36711636ae41$
 
 
