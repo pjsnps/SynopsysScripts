@@ -2,9 +2,8 @@
 #SynopsysGatherServerSpecs_202007.bash
 #pjalajas@synopsys.com
 #License SPDX Apache-2.0
-#Version 2008141934Z
-#grepvcksum: 910323744 9540 
-#CHANGELOG: 2008141934Z pj remove dd
+#Version 2008141949Z # pj enable some Protex-specifics, not tested. 
+#grepvcksum: 3483071372 9558 
 
 #To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script.
 #Generally quite safe, even when run as root.  
@@ -30,9 +29,10 @@
 
 #TODO these first few are broken:
 #BDAPPDIR=hub # protexIP #CodeCenter # hub 
-#BDAPPPATH="/opt/blackduck/${BDAPPDIR}"
-#TOMCATDIR="/opt/blackduck/${BDAPPDIR}/tomcat"
-#For the follow, search this script for DFGREPFIXME and manually enter your greps as desired
+BDAPPDIR=protexIP # protexIP #CodeCenter hub 
+BDAPPPATH="/opt/blackduck/${BDAPPDIR}"
+TOMCATDIR="/opt/blackduck/${BDAPPDIR}/tomcat"
+#For the following, search this script for DFGREPFIXME and manually enter your greps as desired
 #mMountPointFilterIn='.*' ;  # passed into grep 
 #mMountPointFilterOut=" -e ChangeMe -e docker -e overlay " ;  # passed into grep -v ...
 
@@ -215,18 +215,18 @@ echo ;
 #TODO DFGREPFIXME: echo \'${mMountPointFilterIn}\' : \'${mMountPointFilterOut}\'
 #    df | grep " ${mMountPointFilterIn} " | grep -v " ${mMountPointFilterOut} " | tr -s ' ' | cut -d ' ' -f4,6 | while read mavail mdisk ; 
 #df | grep -e "DFGREPFIXME" -e ".*" | grep -v -e "DFGREPFIXME" -e docker -e overlay | tr -s ' ' | cut -d ' ' -f4,6 | while read mavail mdisk ; 
-  #do if [[ "$mavail" -gt "${mmindiskfree1kblocks}" && -w $mdisk ]] ; then echo mountpoint : $mdisk ; 
-  #for mbs_mcount in $mddtests ; 
-    #do echo $mbs_mcount | tr _ ' ' | while read mbs mcount ; 
-    #do echo $(echo writing $mbs $mcount ${mdisk}/${mfilename} ; 
-    #timeout -s SIGINT 10s dd if=/dev/zero of=${mdisk}/${mfilename} bs=$mbs count=$mcount oflag=dsync 2>&1 ) ; 
-    #echo $(echo checking written file... ; ls -lh ${mdisk}/${mfilename} 2>&1 ; du -h ${mdisk}/${mfilename} 2>&1 ) ; 
-    #echo $(echo reading $mbs $mcount ${mdisk}/${mfilename}... ; timeout -s SIGINT 10s dd if=$mdisk/$mfilename of=/dev/null bs=$mbs count=$mcount oflag=dsync 2>&1 ) ; 
-    #echo $(echo removing... ; rm ${mdisk}/${mfilename} 2>&1 ; echo confirming removed... ; ls -al $mdisk/$mfilename 2>&1 ) ; 
-    #echo ; 
-    #done ; 
-  #done ; 
-  #fi ; 
+#do if [[ "$mavail" -gt "${mmindiskfree1kblocks}" && -w $mdisk ]] ; then echo mountpoint : $mdisk ; 
+#for mbs_mcount in $mddtests ; 
+#do echo $mbs_mcount | tr _ ' ' | while read mbs mcount ; 
+#do echo $(echo writing $mbs $mcount ${mdisk}/${mfilename} ; 
+#timeout -s SIGINT 10s dd if=/dev/zero of=${mdisk}/${mfilename} bs=$mbs count=$mcount oflag=dsync 2>&1 ) ; 
+#echo $(echo checking written file... ; ls -lh ${mdisk}/${mfilename} 2>&1 ; du -h ${mdisk}/${mfilename} 2>&1 ) ; 
+#echo $(echo reading $mbs $mcount ${mdisk}/${mfilename}... ; timeout -s SIGINT 10s dd if=$mdisk/$mfilename of=/dev/null bs=$mbs count=$mcount oflag=dsync 2>&1 ) ; 
+#echo $(echo removing... ; rm ${mdisk}/${mfilename} 2>&1 ; echo confirming removed... ; ls -al $mdisk/$mfilename 2>&1 ) ; 
+#echo ; 
+#done ; 
+#done ; 
+#fi ; 
 #done 
 
 
