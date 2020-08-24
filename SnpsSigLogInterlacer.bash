@@ -4,9 +4,9 @@
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-08-13          # move from command line hacks to (more) formal script 
-#VERSION:    2008141727Z         # :! date -u +\%y\%m\%d\%H\%MZ
+#VERSION:    2008162108Z         # :! date -u +\%y\%m\%d\%H\%MZ
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
-#CHANGELOG:  try to make sed non-greedy...hard 
+#CHANGELOG:  2008162108Z add some thoughts 
 
 #PURPOSE:    Intended to allow syncing up Synopsys Black Duck (FKA Hub) logs from Administration, System Settings, System Logs, by timestamp, so you  can see what is happening across all containers at the same point in time. 
 
@@ -40,6 +40,10 @@
 #RECOMMENDED: ____
 
 #TODO: 
+#This is harder than it looks. First, create a log identifier script that recognizes our list of log formats.
+#Figure out what kind of /our/ log it is (can only handle ours), then process that. For example, a garbage collection log usually needs to have the "seconds since jvm start""timestamp converted to UTC by looking at some starting timestamp somehow.
+#Change this to prepend our processed timestamps with "li:" so we can easily track what we created.  If a line doesn't start with "^li:20", we need to calculate and prepend an li: timestamp, preferably from elsewhere in that line, else copy that immediately above, else copy that from somewhere below.  It could be that for those lines with no tiemstatmps at the top of a file are processed last for logical convenience  (start with the first line with a timestamp we understand, prepare our "li:2..." timestamp, repeat for next line; at EOF, start at top of file, if no timestamp, find first "li:2" and copy that found "li:2" to all timestamp-less lines at the top of the file.  
+#Create a script that prepends, to lines with no datestamp, the datestamp of the most recent datestamp above (or below if none above), with a "circa" "-ca?" appended to the end of the estimated timestamp. 
 #Plan to edit all log4j.properties for consisent date formats and log-line layouts.  
 #Plan to create dev containers in my own image. 
 #Maybe create a maintenance container for this and other tools. 
