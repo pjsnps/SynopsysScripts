@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 #NAME: MonitorFailedToRespond.bash
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2020-02-04
