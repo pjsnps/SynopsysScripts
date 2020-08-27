@@ -3,8 +3,8 @@
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2008272124Z 
-#GREPVGREP:  2648075276 19389 # grep -v grepvgrep SnpsSigServerMonitoring.bash | cksum 
+#VERSION: 2008272159Z # fix grepvcksum 
+#GREPVCKSUM:  15902015 19366 # grep -v grepvcksum SnpsSigServerMonitoring.bash | cksum 
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. 
 #PURPOSE:  Intended to try to capture system state when a server crashes, etc.
