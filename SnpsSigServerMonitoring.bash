@@ -3,7 +3,7 @@
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2008272159Z # fix grepvcksum 
+#VERSION: 2008290151Z # pj mcontainer 
 #GREPVCKSUM:  15902015 19366 # grep -v grepvcksum SnpsSigServerMonitoring.bash | cksum 
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. 
@@ -91,7 +91,8 @@ echo
 echo 1L:$($LOGDATECMD) : docker ps wc : $(sudo docker ps | wc -l)
 echo
 echo $($LOGDATECMD) : docker log errors : 
-mcontainerlist="nginx solr registration jobrunner webapp logstash zookeeper scan authentication postgres cfssl upload blackduck-upload-cache documentation"
+#mcontainerlist="nginx solr registration jobrunner webapp logstash zookeeper scan authentication postgres cfssl upload blackduck-upload-cache documentation"
+mcontainerlist="$(docker ps -q)"
 for mcontainer in $mcontainerlist ; do sudo docker logs $(sudo docker ps | grep $mcontainer | cut -d\  -f1) 2>&1 | grep "^$(date --utc +%Y-%m-%d\ %H)" | grep -i -e ERROR -e FAIL -e FATAL -e SEVER | grep -v -e "Attempting to fail orphaned jobs" | tail -n 5 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
 echo
 echo $($LOGDATECMD) : docker logs : 
@@ -118,7 +119,7 @@ do
   vmstat --$mopt --wide |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
   echo
   echo $($LOGDATECMD) : host vmstat --$mopt one line
-  echo $($LOGDATECMD) : host vmstat --$mopt : $(vmstat --$mopt --wide)
+  echo 1L:$($LOGDATECMD) : host vmstat --$mopt : $(vmstat --$mopt --wide)
   echo
   #no vmstat in busybox
     #echo container vmstat
