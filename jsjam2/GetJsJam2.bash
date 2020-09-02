@@ -3,79 +3,169 @@
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
 #DATE:  2020-09-01
-#VERSION: 2009021401Z # pj add some accept exts, order them
+#VERSION: 2009022148Z
+#CHANGELOG:  pj add some accept exts, order them.
 
 #PURPOSE:  Retrieve a large number of versions of a large number of open-source projects, for stress-testing Synopsys Black Duck (Hub) or other source code scanners.
 
-#TODO:
-#LIMIT DOWNLOAD SIZE: If you want to use wget, here is a way to test the size of the file without downloading: wget --spider $URL 2>&1 | awk '/Length/ {print $2}' where $URL is the URL of the file you want to download, of course.  So you can condition your script based on the output. such as: { [ $(wget --spider $URL 2>&1 | awk '/Length/ {print $2}') -lt 20971520 ] && wget $URL; } || echo file to big for limiting the download size to 20 MB.  (the code is ugly, for informational purposes only).
-#add Next/More pages from https://github.com/topics/javascript?o=desc&s=stars
-#add Trending to get new code: https://github.com/trending/javascript?since=monthly
-#add https://hackernoon.com/githubs-top-100-most-valuable-repositories-out-of-96-million-bb48caa9eb0b
-#Comment on differences between scanning archives, vs expanding them first.  
+#DESCRIPTION:  Note, these are popular (starred, trending), so should have much code-reuse (good for stress testing, maybe good for vuln counts, but haven't seen that yet in testing). 
 
-#MAIN
+#USAGE: First, populate input file with urls, like maybe with:
+# [pjalajas@sup-pjalajas-hub jsjam2]$ for mfilter in stars forks updated ; do wget -O - "https://github.com/topics/javascript?o=desc&s=${mfilter}" |& tr '"<>= ' '\n' |& grep -v -e "/contribute$" -e "/issues" -e "/pulls" -e "^/stargazers/" -e "^/topics/" -e "^/about/" -e "^/site/" -e "^/sponsors/" |& grep "^\(/[a-zA-Z0-9]\+/[a-zA-Z0-9]\+\)" | head -n 1000 |& sort -u | while read line ; do echo "https://github.com${line}" ; done >> javascript-github-projects.out ; done
+#Then run this with, like bash GetJsJam2.bash
+
+#TODO:
+#Comment on differences between scanning archives, vs expanding them first.  
+#
+# 1149  20200902T091218EDTWed wget -O - 'https://github.com/topics/javascript?o=desc&s=stars' |& tr '"<>= ' '\n' |& grep -v -e "/contribute$" -e "/issues" -e "/pulls" -e "^/stargazers/" -e "^/topics/" -e "^/about/"  -e "^/site/" -e "^/sponsors/" |& grep "^\(/[a-zA-Z0-9]\+/[a-zA-Z0-9]\+\)" | head -n 1000 |& sort -u | while read line ; do echo "https://github.com${line}" ; done >> javascript-github-projects.out 
+#https://github.com/topics/javascript?l=javascript&o=desc&s=stars
+#https://github.com/topics/javascript?l=javascript&o=desc&s=forks
+#https://github.com/topics/javascript?l=javascript&o=desc&s=updated
+#
+#LIMIT DOWNLOAD SIZE: If you want to use wget, here is a way to test the size of the file without downloading: wget --spider $URL 2>&1 | awk '/Length/ {print $2}' where $URL is the URL of the file you want to download, of course.  So you can condition your script based on the output. such as: { [ $(wget --spider $URL 2>&1 | awk '/Length/ {print $2}') -lt 20971520 ] && wget $URL; } || echo file to big for limiting the download size to 20 MB.  (the code is ugly, for informational purposes only).
+#No need, got enough already.  add Next/More pages from https://github.com/topics/javascript?o=desc&s=stars
+#No need, got enough already.  add Trending to get new code: https://github.com/trending/javascript?since=monthly
+#No need, got enough already.  add https://hackernoon.com/githubs-top-100-most-valuable-repositories-out-of-96-million-bb48caa9eb0b
+
+#Summary of status: 
+#[pjalajas@sup-pjalajas-hub jsjam2]$ date ; date --utc ; hostname -f ; find /home/pjalajas/dev/hub/test/projects/jsjam2/code -type f | wc -l
+#Wed Sep  2 11:30:03 EDT 2020
+#Wed Sep  2 15:30:03 UTC 2020
+#sup-pjalajas-hub.dc1.lan
+#463
+#[pjalajas@sup-pjalajas-hub jsjam2]$ date ; date --utc ; hostname -f ; du -sh /home/pjalajas/dev/hub/test/projects/jsjam2/code
+#Wed Sep  2 11:30:34 EDT 2020
+#Wed Sep  2 15:30:34 UTC 2020
+#sup-pjalajas-hub.dc1.lan
+#8.1G    /home/pjalajas/dev/hub/test/projects/jsjam2/code
+
+#CONFIG
 
 #set -x
 #cat 50-popular-javascript-open-source-projects-on-github-in-2018.out | \
 INPUTFILE=javascript-github-projects.out
 OUTPUTDIR="/home/pjalajas/dev/hub/test/projects/jsjam2/code" # no trailing slash
+SLEEP=10s # no space before unit
+HEADCOUNT=1000 # number of github projects to process (many gz versions per project may be downloaded)
+
+#MAIN
 
 #Use grep -v to remove huge or otherwise undesired files
 #cat javascript-github-projects.out | \
 cat "${INPUTFILE}" | \
-head -n 5000 | \
-grep -v -e "electron" | \
+  grep -v -e "/electron/" | \
+  sort -u | \
+  sort -R | \
+  head -n $HEADCOUNT | \
 while read url
 do
  
+  echo
   echo processing $url # like https://github.com/1j01/jspaint
 
-  #first, get the master zip; that covers projects that have no releases
-  #https://github.com/1j01/jspaint
-  #https://codeload.github.com/1j01/jspaint/zip/master/jspaint-master.zip
   mtail=$(echo $url | cut -d/ -f4,5)
   #echo $mtail # like 1j01/jspaint
-  curl -k -s -C - --create-dirs -o ${OUTPUTDIR}/github.com/${mtail}/zip/master/master.zip "https://codeload.github.com/${mtail}/zip/master" # no trailing slashes, downloads zip
+  #https://github.com/1j01/jspaint
+
+
+  #first, get the master zip; that covers projects that have no releases
+  #https://codeload.github.com/1j01/jspaint/zip/master/jspaint-master.zip
+  #not needed, get enough with wget below:  curl -k -s -C - --create-dirs -o ${OUTPUTDIR}/github.com/${mtail}/zip/master/master.zip "https://codeload.github.com/${mtail}/zip/master" # no trailing slashes, downloads zip
+  timeout 10s curl -k -s -C - --create-dirs -o ${OUTPUTDIR}/github.com/${mtail}/zip/master/master.zip "https://codeload.github.com/${mtail}/zip/master" # no trailing slashes, downloads zip
 
   #second, get a page of releases .zip and .gz files, and link to next "after" page of more releases 
   #curl -k -s "${url}/releases" | cat -A | tr ' ,<>;()"#'  '\n' | grep -e "/archive/" -e "after=" | grep -v -e "bit.ly" | sed -re 's#%3A%2F%2F#://#g' -e 's#/$##g' | sort -u 
   # 2344  15/07/20 22:32:01: wget --mirror --no-parent  --continue --reject sha1,sha512,md5,gif,txt,asc,html,*html*,readme 'https://archive.apache.org/dist/tomcat/'
-  #wget --mirror --no-parent --continue --reject sha1,sha512,md5,gif,txt,asc,html,*html*,readme 'https://archive.apache.org/dist/tomcat/'
-  #works: wget --mirror --no-parent --continue --accept zip,gz "${url}/releases" # can't no-clobber
-  #The Apache Commons Compress library defines an API for working with ar, cpio, Unix dump, tar, zip, gzip, XZ, Pack200, bzip2, 7z, arj, lzma, snappy, DEFLATE, lz4, Brotli, Zstandard, DEFLATE64 and Z files.
-  #works: wget --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
-  #wget --directory-prefix=${OUTPUTDIR} --quiet --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
-  #--quiet is a little too quiet, use no-verbose for some progress indicators...
-  #wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
-  #wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear,deb,exe,rpm,AppImage "${url}/releases" # can't no-clobber
-  #alpha order exts
-  wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept AppImage,ar,bzip*,cpio,deb,dmg,ear,egg,exe,gz,gzip,jar,rar,rpm,tar,war,xz,zip,Z,7z "${url}/releases" # can't no-clobber
+  #No need to limit project archives from a single project because of release download page pagination limits it to about 10 recent versions.
+  timeout 60s wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept gz "${url}/releases" # can't no-clobber
 
   #give it a reset...try to avoid getting blocked
-  sleep 10s 
-done
+  
+  echo
+  echo sleeping $SLEEP
+  echo
+  sleep $SLEEP 
+
+done |& while read line ; do echo "$(date --utc +%Y%m%dT%H:%M:%SZ\ %a) : $line" ; done
 
 
 exit
 #TODO: use git to download?  no, want the archives for storage considerations?
 
 #REFERENCE
-./github.com/521dimensions
-./github.com/521dimensions/amplitudejs
-./github.com/521dimensions/amplitudejs/releases
-./github.com/521dimensions/amplitudejs/releases/download
-./github.com/521dimensions/amplitudejs/releases/download/v4.0.0
-./github.com/521dimensions/amplitudejs/releases/download/v4.0.0/v4.0.0.zip
-./github.com/521dimensions/amplitudejs/archive
-./github.com/521dimensions/amplitudejs/archive/v4.1.0.zip
-./github.com/521dimensions/amplitudejs/archive/v3.3.0.zip
-./github.com/521dimensions/amplitudejs/archive/v5.0.1.tar.gz
 
-if no releases: 
-https://codeload.github.com/1j01/jspaint/zip/master/jspaint-master.zip
 
-                                                                      
+
+[pjalajas@sup-pjalajas-hub jsjam2]$ date ; date --utc ; hostname -f ; pwd ; whoami ; find /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/ -type f -iname "a*" | xargs du -shc                                                                                                                                                                                                                 
+Wed Sep  2 10:20:23 EDT 2020
+Wed Sep  2 14:20:23 UTC 2020
+sup-pjalajas-hub.dc1.lan
+/home/pjalajas/dev/git/SynopsysScripts/jsjam2
+pjalajas
+175M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0/atom-amd64.tar.gz
+169M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0/atom-mac-symbols.zip
+174M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0/atom-x64-windows.zip
+182M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0-beta0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0-beta0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0-beta0/atom-mac-symbols.zip
+176M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0-beta0/atom-x64-windows.zip
+184M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0-beta0/atom-mac.zip
+174M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.46.0/atom-amd64.tar.gz
+185M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.46.0/atom-windows.zip
+212K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.46.0/atom-mac-symbols.zip
+193M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.46.0/atom-x64-windows.zip
+181M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.46.0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0-beta0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0-beta0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0-beta0/atom-mac-symbols.zip
+175M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0-beta0/atom-x64-windows.zip
+183M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0-beta0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0/atom-mac-symbols.zip
+175M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0/atom-x64-windows.zip
+183M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0-beta0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0-beta0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0-beta0/atom-mac-symbols.zip
+175M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0-beta0/atom-x64-windows.zip
+183M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.48.0-beta0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.51.0-beta0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.51.0-beta0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.51.0-beta0/atom-mac-symbols.zip
+176M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.51.0-beta0/atom-x64-windows.zip
+184M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.51.0-beta0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0/atom-mac-symbols.zip
+175M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0/atom-x64-windows.zip
+183M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.49.0/atom-mac.zip
+177M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0/atom-amd64.tar.gz
+170M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0/atom-mac-symbols.zip
+176M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0/atom-x64-windows.zip
+183M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.50.0/atom-mac.zip
+175M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0-beta0/atom-amd64.tar.gz
+168M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0-beta0/atom-windows.zip
+192K    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0-beta0/atom-mac-symbols.zip
+174M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0-beta0/atom-x64-windows.zip
+182M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/atom/atom/releases/download/v1.47.0-beta0/atom-mac.zip
+149M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/SeleniumHQ/selenium/archive/atoms-20181002.tar.gz
+153M    /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/SeleniumHQ/selenium/archive/atoms-20181002.zip
+7.2G    total
+
+
+
+[pjalajas@sup-pjalajas-hub jsjam2]$ date ; date --utc ; hostname -f ; pwd ; whoami ; du -sh /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/                                                                                                                                                                                                                                                   
+Wed Sep  2 10:18:26 EDT 2020
+Wed Sep  2 14:18:26 UTC 2020
+sup-pjalajas-hub.dc1.lan
+/home/pjalajas/dev/git/SynopsysScripts/jsjam2
+pjalajas
+28G     /home/pjalajas/dev/hub/test/projects/jsjam2/code/github.com/
+
 [pjalajas@sup-pjalajas-hub dev]$ curl -k -s https://github.com/facebook/react/releases | cat -A | tr ' ,<>;()"#'  '\n' | grep -e "/archive/" -e "after=" | grep -v -e "bit.ly" | sed -re 's#%3A%2F%2F#://#g' -e 's#/$##g' | sort -u 
 /facebook/react/archive/status.tar.gz
 /facebook/react/archive/status.zip
