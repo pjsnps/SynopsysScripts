@@ -3,13 +3,14 @@
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
 #DATE:  2020-09-01
-#VERSION: 2009020422Z
+#VERSION: 2009021312Z # add github trending, change input file name
 
 #PURPOSE:  Retrieve a large number of version of a large number of open-source for stress testing Synopsys Black Duck (Hub) or other source code scanners.
 
 #set -x
-cat 50-popular-javascript-open-source-projects-on-github-in-2018.out | \
-head -n 50 | \
+#cat 50-popular-javascript-open-source-projects-on-github-in-2018.out | \
+cat javascript-github-projects.out | \
+head -n 5000 | \
 while read url
 do
  
