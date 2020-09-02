@@ -3,16 +3,29 @@
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
 #DATE:  2020-09-01
-#VERSION: 2009021319Z # pj OUTPUTDIR, no-verbose 
+#VERSION: 2009021401Z # pj add some accept exts, order them
 
-#PURPOSE:  Retrieve a large number of version of a large number of open-source for stress testing Synopsys Black Duck (Hub) or other source code scanners.
+#PURPOSE:  Retrieve a large number of versions of a large number of open-source projects, for stress-testing Synopsys Black Duck (Hub) or other source code scanners.
+
+#TODO:
+#LIMIT DOWNLOAD SIZE: If you want to use wget, here is a way to test the size of the file without downloading: wget --spider $URL 2>&1 | awk '/Length/ {print $2}' where $URL is the URL of the file you want to download, of course.  So you can condition your script based on the output. such as: { [ $(wget --spider $URL 2>&1 | awk '/Length/ {print $2}') -lt 20971520 ] && wget $URL; } || echo file to big for limiting the download size to 20 MB.  (the code is ugly, for informational purposes only).
+#add Next/More pages from https://github.com/topics/javascript?o=desc&s=stars
+#add Trending to get new code: https://github.com/trending/javascript?since=monthly
+#add https://hackernoon.com/githubs-top-100-most-valuable-repositories-out-of-96-million-bb48caa9eb0b
+#Comment on differences between scanning archives, vs expanding them first.  
+
+#MAIN
 
 #set -x
 #cat 50-popular-javascript-open-source-projects-on-github-in-2018.out | \
+INPUTFILE=javascript-github-projects.out
 OUTPUTDIR="/home/pjalajas/dev/hub/test/projects/jsjam2/code" # no trailing slash
 
-cat javascript-github-projects.out | \
+#Use grep -v to remove huge or otherwise undesired files
+#cat javascript-github-projects.out | \
+cat "${INPUTFILE}" | \
 head -n 5000 | \
+grep -v -e "electron" | \
 while read url
 do
  
@@ -34,7 +47,10 @@ do
   #works: wget --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
   #wget --directory-prefix=${OUTPUTDIR} --quiet --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
   #--quiet is a little too quiet, use no-verbose for some progress indicators...
-  wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+  #wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+  #wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear,deb,exe,rpm,AppImage "${url}/releases" # can't no-clobber
+  #alpha order exts
+  wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept AppImage,ar,bzip*,cpio,deb,dmg,ear,egg,exe,gz,gzip,jar,rar,rpm,tar,war,xz,zip,Z,7z "${url}/releases" # can't no-clobber
 
   #give it a reset...try to avoid getting blocked
   sleep 10s 
