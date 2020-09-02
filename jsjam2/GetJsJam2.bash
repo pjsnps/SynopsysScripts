@@ -1,5 +1,11 @@
 #!/usb/bin/bash
-#
+#GetJsJam2.bash
+#AUTHOR: pjalajas@synopsys.com
+#LICENSE: SPDX Apache-2.0
+#DATE:  2020-09-01
+#VERSION: 2009020422Z
+
+#PURPOSE:  Retrieve a large number of version of a large number of open-source for stress testing Synopsys Black Duck (Hub) or other source code scanners.
 
 #set -x
 cat 50-popular-javascript-open-source-projects-on-github-in-2018.out | \
@@ -22,7 +28,8 @@ do
   #wget --mirror --no-parent --continue --reject sha1,sha512,md5,gif,txt,asc,html,*html*,readme 'https://archive.apache.org/dist/tomcat/'
   #works: wget --mirror --no-parent --continue --accept zip,gz "${url}/releases" # can't no-clobber
   #The Apache Commons Compress library defines an API for working with ar, cpio, Unix dump, tar, zip, gzip, XZ, Pack200, bzip2, 7z, arj, lzma, snappy, DEFLATE, lz4, Brotli, Zstandard, DEFLATE64 and Z files.
-  wget --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+  #works: wget --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+  wget --quiet --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
   sleep 10s 
 done
 
