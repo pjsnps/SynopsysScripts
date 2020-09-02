@@ -3,12 +3,14 @@
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
 #DATE:  2020-09-01
-#VERSION: 2009021312Z # add github trending, change input file name
+#VERSION: 2009021319Z # pj OUTPUTDIR, no-verbose 
 
 #PURPOSE:  Retrieve a large number of version of a large number of open-source for stress testing Synopsys Black Duck (Hub) or other source code scanners.
 
 #set -x
 #cat 50-popular-javascript-open-source-projects-on-github-in-2018.out | \
+OUTPUTDIR="/home/pjalajas/dev/hub/test/projects/jsjam2/code" # no trailing slash
+
 cat javascript-github-projects.out | \
 head -n 5000 | \
 while read url
@@ -20,8 +22,8 @@ do
   #https://github.com/1j01/jspaint
   #https://codeload.github.com/1j01/jspaint/zip/master/jspaint-master.zip
   mtail=$(echo $url | cut -d/ -f4,5)
-  echo $mtail # like 1j01/jspaint
-  curl -k -s -C - --create-dirs -o ./github.com/${mtail}/zip/master/master.zip "https://codeload.github.com/${mtail}/zip/master" # no trailing slashes, downloads zip
+  #echo $mtail # like 1j01/jspaint
+  curl -k -s -C - --create-dirs -o ${OUTPUTDIR}/github.com/${mtail}/zip/master/master.zip "https://codeload.github.com/${mtail}/zip/master" # no trailing slashes, downloads zip
 
   #second, get a page of releases .zip and .gz files, and link to next "after" page of more releases 
   #curl -k -s "${url}/releases" | cat -A | tr ' ,<>;()"#'  '\n' | grep -e "/archive/" -e "after=" | grep -v -e "bit.ly" | sed -re 's#%3A%2F%2F#://#g' -e 's#/$##g' | sort -u 
@@ -30,7 +32,11 @@ do
   #works: wget --mirror --no-parent --continue --accept zip,gz "${url}/releases" # can't no-clobber
   #The Apache Commons Compress library defines an API for working with ar, cpio, Unix dump, tar, zip, gzip, XZ, Pack200, bzip2, 7z, arj, lzma, snappy, DEFLATE, lz4, Brotli, Zstandard, DEFLATE64 and Z files.
   #works: wget --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
-  wget --quiet --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+  #wget --directory-prefix=${OUTPUTDIR} --quiet --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+  #--quiet is a little too quiet, use no-verbose for some progress indicators...
+  wget --directory-prefix=${OUTPUTDIR} --no-verbose --mirror --no-parent --continue --accept zip,gz,ar,tar,7z,bzip,bzip2,xz,dmg,egg,rar,gzip,Z,cpio,jar,war,ear "${url}/releases" # can't no-clobber
+
+  #give it a reset...try to avoid getting blocked
   sleep 10s 
 done
 
