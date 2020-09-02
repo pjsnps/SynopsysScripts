@@ -3,7 +3,7 @@
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION:  2008302057Z # pj append LOGDATECMD to docker container lines
+#VERSION:  2008311327Z  # pj move 1L to end of timestamp for sortability
 #GREPVCKSUM:  # grep -v grepvcksum SnpsSigServerMonitoring.bash | cksum 
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. 
@@ -40,31 +40,31 @@ LOGDATECMD='date --utc +%Y-%m-%dT%H:%M:%S.%NZ' # reversible back into date -d if
 
 #MAIN
 echo
-echo 1L:$($LOGDATECMD) : Start 
+echo $($LOGDATECMD):1L : Start 
 echo
-echo 1L:$($LOGDATECMD) : $(date +%Y-%m-%dT%H:%M:%S.%N%Z\ %a) : $(hostname -f) : $(whoami) : $(pwd) 
+echo $($LOGDATECMD):1L : $(date +%Y-%m-%dT%H:%M:%S.%N%Z\ %a) : $(hostname -f) : $(whoami) : $(pwd) 
 echo
 echo
-echo 1L:$($LOGDATECMD) : memory:
+echo $($LOGDATECMD):1L : memory:
 echo
 for mfreeopt in "-g" ; do
   # default free in KiB, in top output below, so no need here
   #free $mfreeopt $(echo $PREPEND)
   free $mfreeopt |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
   echo
-  echo 1L:$($LOGDATECMD) : free $mfreeopt : $(free $mfreeopt)
+  echo $($LOGDATECMD):1L : free $mfreeopt : $(free $mfreeopt)
   echo
 done
-echo 1L:$($LOGDATECMD) : memory usage : $(free | awk 'NR == 2 {print $3/$2*100 "%"}') ::  swap usage : $(free | awk 'NR == 3 {print $3/$2*100 "%"}')
+echo $($LOGDATECMD):1L : memory usage : $(free | awk 'NR == 2 {print $3/$2*100 "%"}') ::  swap usage : $(free | awk 'NR == 3 {print $3/$2*100 "%"}')
 echo
-echo 1L:$($LOGDATECMD) : top:
+echo $($LOGDATECMD):1L : top:
 echo
 for mtopsort in %CPU %MEM ; do
   #max width 512:
   top -n1 -b -c -w 512 -o"${mtopsort}" | head -n 20 |& while read line ; do echo "$($LOGDATECMD) : $line" ; done 
   echo
 done
-echo 1L:$($LOGDATECMD) : top %MEM : $(top -n1 -b -o%MEM | head -n 5) # just the 5 header rows
+echo $($LOGDATECMD):1L : top %MEM : $(top -n1 -b -o%MEM | head -n 5) # just the 5 header rows
 echo
 echo iostat:
 echo
@@ -75,13 +75,13 @@ echo $($LOGDATECMD) : iostat -y :
 echo
 iostat -y |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
 echo
-echo 1L:$($LOGDATECMD) : iostat -y : $(iostat -y) 
+echo $($LOGDATECMD):1L : iostat -y : $(iostat -y) 
 echo
 iotop -b -n1 -d5 | head -n 8 |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
 echo
 echo iotop:
 echo
-echo 1L:$($LOGDATECMD) : iotop : $(iotop -b -n1 -d5 | head -n 2)
+echo $($LOGDATECMD):1L : iotop : $(iotop -b -n1 -d5 | head -n 2)
 echo
 echo $($LOGDATECMD) : postgres ps : 
 echo
@@ -95,7 +95,7 @@ echo $($LOGDATECMD) : java Xmx TODO:FIXME :
 echo
 ps auxww | grep -v grep | grep -Po "\-Xmx.*? " | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
 echo
-echo 1L:$($LOGDATECMD) : docker ps wc : $(docker ps | wc -l)
+echo $($LOGDATECMD):1L : docker ps wc : $(docker ps | wc -l)
 echo
 echo $($LOGDATECMD) : docker log errors : TODO:  take too long, manually enable if desired...
 #TODO: print container info only if Errors are present. 
@@ -129,7 +129,7 @@ do
   vmstat --$mopt --wide |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
   echo
   echo $($LOGDATECMD) : host vmstat --$mopt one line
-  echo 1L:$($LOGDATECMD) : host vmstat --$mopt : $(vmstat --$mopt --wide)
+  echo $($LOGDATECMD):1L : host vmstat --$mopt : $(vmstat --$mopt --wide)
   echo
   #no vmstat in busybox
     #echo container vmstat
@@ -337,7 +337,7 @@ done
 	#23:15:05.254390 IP 172.18.0.5.56524 > kb.blackducksoftware.com.https: Flags [F.], seq 732, ack 4208, win 306, options [nop,nop,TS val 2815570826 ecr 1781015748], length 0
   echo
 
-echo 1L:$($LOGDATECMD) : Done 
+echo $($LOGDATECMD):1L : Done 
 
 exit
 #REFERENCE
