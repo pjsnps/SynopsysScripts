@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
 #DATE:  2020-09-01
-#VERSION: 2009022350Z
-#CHANGELOG:  pj continuing tightening up, good enough now
+#VERSION: 2009030002Z
+#CHANGELOG:  pj done?
 
 #PURPOSE:  Retrieve a large number of versions of a large number of open-source projects, for stress-testing Synopsys Black Duck (Hub) or other source code scanners.
 
@@ -68,12 +68,12 @@ exit
 #REFERENCE
 
 Status update:
-[pjalajas@sup-pjalajas-hub test]$ find projects/jsjam2/code/github.com/ -type f | wc -l                                                                            
-856
-[pjalajas@sup-pjalajas-hub test]$ date ; date --utc ; hostname -f ; pwd ; du -sh projects/jsjam2/code/github.com/                                                  
-Wed Sep  2 19:48:19 EDT 2020
-Wed Sep  2 23:48:19 UTC 2020
+[pjalajas@sup-pjalajas-hub test]$ date ; date --utc ; hostname -f ; pwd ; whoamin ; find projects/jsjam2/code/github.com/ -type f | wc -l
+Wed Sep  2 20:01:04 EDT 2020
+Thu Sep  3 00:01:04 UTC 2020
 sup-pjalajas-hub.dc1.lan
 /home/pjalajas/Documents/dev/hub/test
+-bash: whoamin: command not found
+856
+[pjalajas@sup-pjalajas-hub test]$ du -sh projects/jsjam2/code/github.com/ 
 21G     projects/jsjam2/code/github.com/
-
