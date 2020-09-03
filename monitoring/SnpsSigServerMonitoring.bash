@@ -55,7 +55,7 @@ for mfreeopt in "-g" ; do
   echo $($LOGDATECMD):1L : free $mfreeopt : $(free $mfreeopt)
   echo
 done
-echo $($LOGDATECMD):1L : memory usage : $(free | awk 'NR == 2 {print $3/$2*100 "%"}') ::  swap usage : $(free | awk 'NR == 3 {print $3/$2*100 "%"}')
+echo $($LOGDATECMD):1L : memory usage : $(free | awk 'NR == 2 {print $3/$2*100 "%"}') :: swap usage : $(free | awk 'NR == 3 {print $3/$2*100 "%"}')
 echo
 echo $($LOGDATECMD):1L : top:
 echo
@@ -168,22 +168,23 @@ do
 done
 
 echo $($LOGDATECMD) : host /proc/net : 
-  find /proc/net/ -type f | xargs grep -H ".*"  | wc -l |& while read line ; do echo "$($LOGDATECMD) : host /proc/net/ wc : $line" ; done
+  #grep -H prints filename:content (no space around colon)
+  find /proc/net/ -type f | xargs grep -H ".*" | wc -l |& while read line ; do echo "$($LOGDATECMD) : host /proc/net/ wc : $line" ; done
   echo
-  find /proc/net/ -type f | xargs grep -H ".*"  |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+  find /proc/net/ -type f | xargs grep -H ".*" |& while read line ; do echo "$($LOGDATECMD) : host /proc/net/ $line" ; done
   echo
 echo
 
 echo $($LOGDATECMD) : host lsof dockerd : 
   lsof -p $(pgrep dockerd) 2> /dev/null | wc -l |& while read line ; do echo "$($LOGDATECMD) : host lsof dockerd wc : $line" ; done
   echo
-  lsof -p $(pgrep dockerd) 2> /dev/null |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+  lsof -p $(pgrep dockerd) 2> /dev/null |& while read line ; do echo "$($LOGDATECMD) : host lsof dockerd : $line" ; done
   echo
 echo
 
 echo $($LOGDATECMD) : host netfilter : 
   echo
-  /sbin/sysctl -a | grep -i nf_conntrack |& while read line ; do echo "$($LOGDATECMD) : host sysctl -a netfilter : $line" ; done
+  /sbin/sysctl -a |& grep -i nf_conntrack |& while read line ; do echo "$($LOGDATECMD) : host sysctl -a netfilter : $line" ; done
   echo
   find /sys/module/nf_conntrack -type f | xargs grep -H ".*" |& while read line ; do echo "$($LOGDATECMD) : host sysctl -a netfilter : $line" ; done # TODO: probably should move this and others to a one-time SynopsysGatherServerSpecs_202007.bash
 echo
