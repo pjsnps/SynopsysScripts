@@ -95,6 +95,17 @@ echo $($LOGDATECMD) : java Xmx TODO:FIXME :
 echo
 ps auxww | grep -v grep | grep -Po "\-Xmx.*? " | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
 echo
+
+
+
+#TODO: put all docker tests here and wrap with an "is this a docker host" test
+echo
+echo $($LOGDATECMD) : monitoring docker 
+echo
+echo $($LOGDATECMD) : docker ps -a $(docker ps -a)
+echo
+docker ps -a |& while read line ; do echo "$($LOGDATECMD) : docker ps -a : $line" ; done 
+echo
 echo $($LOGDATECMD):1L : docker ps wc : $(docker ps | wc -l)
 echo
 echo $($LOGDATECMD) : docker log errors : TODO:  take too long, manually enable if desired...
