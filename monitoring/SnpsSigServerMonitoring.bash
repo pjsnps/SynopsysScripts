@@ -248,7 +248,7 @@ echo
       #2020-08-29T20:42:39.413317073Z : BusyBox v1.30.1 (2019-10-26 11:23:07 UTC) multi-call binary.
       #2020-08-29T20:42:39.416523953Z : Usage: timeout [-s SIG] SECS PROG ARGS
       #docker container exec -u 0 -it $mcontainerid timeout -t 5 ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      timeout 5s docker container exec -u 0 -it $mcontainerid ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $mcontainerid ping kb.blackducksoftware.com : $line" ; done
+      #20200903 hangs, not sure why:  timeout 5s docker container exec -u 0 -it $mcontainerid ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $mcontainerid ping kb.blackducksoftware.com : $line" ; done
     done
     #BUG HANGS: timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) ping6 kb.blackducksoftware.com
     echo
