@@ -3,7 +3,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
 #DATE:  2020-09-01
-#VERSION: 2009030002Z
+#VERSION: 2009030003Z
 #CHANGELOG:  pj done?
 
 #PURPOSE:  Retrieve a large number of versions of a large number of open-source projects, for stress-testing Synopsys Black Duck (Hub) or other source code scanners.
@@ -11,7 +11,7 @@
 #DESCRIPTION:  Note, these are popular (starred, trending), so should have much code-reuse (good for stress testing, maybe good for vuln counts, but haven't seen that yet in testing).  Uses timeout to limit size of single download or number of downloads per project.  Nice to keep these downloads as archives (vs like using git clone). 
 
 #USAGE: First, populate input file with urls, like maybe with:
-#for mfilter in stars forks updated ; do wget -O - "https://github.com/topics/javascript?o=desc&s=${mfilter}" |& tr '"<>= ' '\n' |& grep -v -e "/contribute" -e "/issues" -e "/pulls" -e "/stargazers" -e "/topics" -e "/about" -e "/site" -e "/sponsors" |& grep "^\(/[a-zA-Z0-9]\+/[a-zA-Z0-9]\+\)" | head -n 1000 |& sort -u | while read line ; do echo "https://github.com${line}" ; done >> javascript-github-projects.out ; done
+#[pjalajas@sup-pjalajas-hub jsjam2]$ for mfilter in stars forks updated ; do wget -O - "https://github.com/topics/javascript?o=desc&s=${mfilter}" |& tr '"<>= ' '\n' |& grep -v -e "/contribute" -e "/issues" -e "/pulls" -e "/stargazers" -e "/trending" -e "/topics" -e "/about" -e "/site" -e "/sponsors" -e "/features" -e "/electron/electron" |& grep "^\(/[a-zA-Z0-9]\+/[a-zA-Z0-9]\+\)" | head -n 1000 |& sort -u | while read line ; do echo "https://github.com${line}" ; done ; done > javascript-github-projects.out
 #Then edit CONFIGs.
 #Then run this script with, like bash GetJsJam2.bash
 
