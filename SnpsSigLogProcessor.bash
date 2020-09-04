@@ -2,27 +2,27 @@
 shopt -s extglob
 #set +x
 
-#SCRIPT:     SnpsSigLogIdentifier.bash
+#SCRIPT:     SnpsSigLogProcessor.bash (was SnpsSigLogIdentifier.bash)
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
-#CREATED:    2020-08-23          # 
-#VERSION:    2009040108Z # :r ! date -u +\%y\%m\%d\%H\%MZ
+#CREATED:    2020-08-23
+#VERSION:    2009040127Z # :r ! date -u +\%y\%m\%d\%H\%MZ
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
 #CHANGELOG:  
 
 #PURPOSE:    Plan is still evolving, probably different from what is stated herein.  Identify what kind of log we are processing, and process it.  "Process" meaning, rationalize or normalize, to make them more consistent and complete.  To be used in pipeline before loginterlacer.bash; keep loginterlacing.bash just for the interlacing task, not pre-preprocessing which is what this script does..
 
-#USAGE: See REFERENCE section at bottom of this script.
-#USAGE: Accepts a (optional?) log path/filename in position one.  Need path to hint at log line date format by parsing container name from path. 
+#USAGE: See REFERENCE section at bottom of this script. Currently works only on logs downloaded from Black Duck (Hub) Administration, System Settings, System Logs; download and extract from that .zip the logs of interest.   Accepts a (optional?) log path/filename in position one.  Need path to hint at log line date format by parsing container name from path. 
 
 
 #DEVPLAN:  
-# Prepend last-known timestamp to lines with no timestamp (like java stack traces), with "~", "ca" or "estim" (don't confuse with EST timezone).
-# Add remaining 2nd-tier processline cases; start with GC logs; see REF for list.
+# Done?:  Prepend last-known timestamp to lines with no timestamp (like java stack traces), with "~", "ca" or "estim" (don't confuse with EST timezone).
+# Add remaining 2nd-tier processline cases; start with GC logs; see REF for list.  Add: ability to process logs from docker container logs. 
 
 
 
 #TODO:  Create a datetimestamp rationalizer library script.  Input anything that kind of resembles a date, and it will output a reversible datetime stamp.
+#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogIdentifier.bash '{}'
 #TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogIdentifier.bash '{}'
      #  trying shopt -s extglob, failed
 #TODO: ____ 
