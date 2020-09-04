@@ -12,8 +12,7 @@ shopt -s extglob
 
 #PURPOSE:    Plan is still evolving, probably different from what is stated herein.  Identify what kind of log we are processing, and process it.  "Process" meaning, rationalize or normalize, to make them more consistent and complete.  To be used in pipeline before loginterlacer.bash; keep loginterlacing.bash just for the interlacing task, not pre-preprocessing which is what this script does..
 
-#USAGE: See REFERENCE section at bottom of this script. Currently works only on logs downloaded from Black Duck (Hub) Administration, System Settings, System Logs; download and extract from that .zip the logs of interest.   Accepts a (optional?) log path/filename in position one.  Need path to hint at log line date format by parsing container name from path. 
-
+#USAGE: See REFERENCE section at bottom of this script. Currently works only on logs downloaded from Black Duck (Hub) Administration, System Settings, System Logs; download and extract from that .zip the logs of interest.   Accepts a (optional?) log path/filename in position one.  Need path to hint at log line date format by parsing container name from path.  Outputs formatted hourly log files to ${mdirname}/${mbasename}.H${mhour}.log.   [pjalajas@sup-pjalajas-2 SynopsysScripts]$ #mdate=2020-09-02 ; find /home/pjalajas/Downloads/hub-webserver_bds_logs-20200904T011849/hub-jobrunner/app-log -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogProcessor.bash '{}'    
 
 #DEVPLAN:  
 # Done?:  Prepend last-known timestamp to lines with no timestamp (like java stack traces), with "~", "ca" or "estim" (don't confuse with EST timezone).
@@ -22,8 +21,7 @@ shopt -s extglob
 
 
 #TODO:  Create a datetimestamp rationalizer library script.  Input anything that kind of resembles a date, and it will output a reversible datetime stamp.
-#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogIdentifier.bash '{}'
-#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogIdentifier.bash '{}'
+#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogProcessor.bash '{}'
      #  trying shopt -s extglob, failed
 #TODO: ____ 
 
