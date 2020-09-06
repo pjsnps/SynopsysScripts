@@ -1,23 +1,59 @@
 #!/usr/bin/bash
-#SynopsysGatherServerSpecs_202009.bash
-#pjalajas@synopsys.com
-#License SPDX Apache-2.0
-#Version 2009061330Z # pj enable some Protex-specifics, not tested. 
-#grepvcksum: 
+#SCRIPT: SnpsSigSup_GetSpecs.bash
+#AUTHOR: pjalajas@synopsys.com
+#LICENSE: SPDX Apache-2.0
+#VERSION: 2009061338Z # pj updating 
+#GREPVCKSUM:  TODO
 
-#To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script.
-#Generally quite safe, even when run as root.  
-#REMOVED: See dd read/write performance testing near bottom.  That is writing and reading testing to each of the larger mounts from df output.  
+#PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
-#USAGE: Needs lots of work.  A proof of concept.  Suggestions welcome. 
-#USAGE: Edit CONFIGs, then:
-#USAGE: nice time sudo ./SynopsysGatherServerSpecs_202007.bash |& gzip -9 > /tmp/SynopsysGatherServerSpecs_202007.bash_$(date --utc +%Y%m%d%H%M%SZ%a)_$(hostname -f).out.gz 
-#USAGE: takes maybe 10 minutes to run.
-#USAGE: May need to swap "nice time" to "time nice" or remove nice from command line.
-#USAGE: zgrep "not found" $(ls -1rt /tmp/SynopsysGatherServerSpecs.*gz) to find any missing commands you may wish to install.
-#  lspci is in pcitutils
+#REQUIREMENTS
+#lspci: in package pcitutils
 
-#TODO 
+usage() {  
+  cat << USAGEEOF 
+    Usage: 
+    --help -h display this help
+    --debug -d debug mode (set -x)
+    Needs lots of work.  A proof of concept.  Suggestions welcome. 
+    Edit CONFIGs, then:
+    sudo ./SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_$(hostname -f).out.gz 
+    Takes a minute or so to run.
+    Run zgrep "not found" \$(ls -1rt /tmp/SnpsSigSup_GetSpecs.bash*gz | tail -n 1) to find any missing commands you may wish to install.
+USAGEEOF
+  exit 1
+  } 
+export -f usage
+
+debug() {
+  set -x
+}
+export -f debug
+
+#bad if [[ "$#" == "--help"  || "$#" == "-h" ]] ; then usage ; exit 0 ; fi 
+#bad if [[ "$#" == "--debug" || "$#" == "-d" ]] ; then debug ; fi 
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -h|--help)
+    usage
+    shift #  
+    ;;
+    -d|--debug)
+    set -x
+    shift #  
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+
+
+#NOTES:  Generally quite safe, even when run as root.  
 
 #TODO generalize to Hub
 #TODO add java, docker, postgresql
@@ -36,22 +72,13 @@ TOMCATDIR="/opt/blackduck/${BDAPPDIR}/tomcat"
 #mMountPointFilterIn='.*' ;  # passed into grep 
 #mMountPointFilterOut=" -e ChangeMe -e docker -e overlay " ;  # passed into grep -v ...
 
-#REMOVED dd:
-#Filter for dd disk performance test at the end. Filter in or out Mounts as desired. See output of "sudo df" for preview (docker mounts appear in sudo df).. 
-#mddtests are passed into dd as bs_count, so 1_2 would run dd with bs=1 count=2. Trying to get latency with 1_1 and throughput with larger numbers.
-#mddtests="1_1   1_1   1_100000000   10000_10000   100000000_1" ; 
-#mmindiskfree1kblocks=500000 ;  # don't test mounts with free space, in blocks (frequently 1024 bytes/block), less than this
-#mfilename=SynopsysDdTest.img ; # any unique name, to avoid clobbering in dd test. Deleted when done testing.  
-
-
-
 #INITIALIZE
 
 echo
 echo New script, lightly tested, lots of bugs and errors will be thrown.  Please send issues and suggestions to pjalajas@synopsys.com, thanks!
 echo
 date 
-date -u
+date --utc
 id -a
 pwd
 
@@ -67,11 +94,12 @@ echo
 echo $0
 grep [V]ersion $0
 md5sum $0
+grep -i -v grepvcksum $0 | cksum
 echo
 
 hostname -f
-ip addr | grep inet
-ip addr 
+ip -stats -detail addr 
+ip -stats -detail link
 #echo $(curl -s http://whatismyip.akamai.com/)
 
 echo
@@ -128,32 +156,35 @@ echo -e pg SHOW ALL : "\n$(${BDAPPPATH}/postgresql/bin/psql -U blackduck -d temp
 echo
 echo -e pg stat activity : "\n$(${BDAPPPATH}/postgresql/bin/psql -U blackduck -d template1 -c "SELECT * FROM pg_stat_activity ; ")"
 echo
-echo -e top cpu : "\n$(top -c -b -n 1 | head -n 40)"
+echo -e top cpu : "\n$(top -c -b -n 1 -w 512 -o %CPU | head -n 40)"
 echo
-echo -e top mem : "\n$(top -c -a -b -n 1 | head -n 40)"
+#no -a?:  echo -e top mem : "\n$(top -c -a -b -n 1 -w 512 | head -n 40)"
+echo -e top mem : "\n$(top -c -b -n 1 -w 512 -o %MEM | head -n 40)"
 echo
 echo -e ps java threads : "\n$(ps -eLf | grep -v grep | grep -c "java.*/opt/blackduck/protexIP/tomcat")"
 echo
-echo -e oom-killer : "\n$(zgrep -i -e oom -e kill /var/log/messages*)"
+echo -e oom-killer : "\n$(zgrep -i -e "invoked oom-killer" -e " killed " -e "dockerd.*oom" $(ls -1rt /var/log/messages* | tail -n 2))" | grep -v -e puppet -e ups
 
-echo
-echo -e /proc/sys/vm/zone_reclaim_mode : "\n$(cat /proc/sys/vm/zone_reclaim_mode)"
-echo
-echo -e cat /sys/devices/system/cpu/cpuidle/current_driver : "\n$(cat /sys/devices/system/cpu/cpuidle/current_driver)"
-echo
-echo -e cat /proc/sys/kernel/sched_migration_cost : "\n$(cat /proc/sys/kernel/sched_migration_cost)"
-echo
-echo -e cat /proc/sys/kernel/sched_autogroup_enabled : "\n$(cat /proc/sys/kernel/sched_autogroup_enabled)"
-echo
-echo -e cat /sys/kernel/mm/transparent_hugepage/enabled : "\n$(cat /sys/kernel/mm/transparent_hugepage/enabled)"
-echo
-echo -e cat /sys/kernel/mm/transparent_hugepage/defrag : "\n$(cat /sys/kernel/mm/transparent_hugepage/defrag)"
-echo
-echo -e cat /proc/sys/vm/swappiness : "\n$(cat /proc/sys/vm/swappiness)"
-echo
-echo -e cat /sys/block/sda/queue/scheduler : "\n$(cat /sys/block/sda/queue/scheduler)"
-echo
-echo -e cat /sys/block/sda/device/timeout : "\n$(cat /sys/block/sda/device/timeout)"
+
+#moved to end, grepping all of them
+#echo
+#echo -e /proc/sys/vm/zone_reclaim_mode : "\n$(cat /proc/sys/vm/zone_reclaim_mode)"
+#echo
+#echo -e cat /sys/devices/system/cpu/cpuidle/current_driver : "\n$(cat /sys/devices/system/cpu/cpuidle/current_driver)"
+#echo
+#echo -e cat /proc/sys/kernel/sched_migration_cost : "\n$(cat /proc/sys/kernel/sched_migration_cost)"
+#echo
+#echo -e cat /proc/sys/kernel/sched_autogroup_enabled : "\n$(cat /proc/sys/kernel/sched_autogroup_enabled)"
+#echo
+#echo -e cat /sys/kernel/mm/transparent_hugepage/enabled : "\n$(cat /sys/kernel/mm/transparent_hugepage/enabled)"
+#echo
+#echo -e cat /sys/kernel/mm/transparent_hugepage/defrag : "\n$(cat /sys/kernel/mm/transparent_hugepage/defrag)"
+#echo
+#echo -e cat /proc/sys/vm/swappiness : "\n$(cat /proc/sys/vm/swappiness)"
+#echo
+#echo -e cat /sys/block/sda/queue/scheduler : "\n$(cat /sys/block/sda/queue/scheduler)"
+#echo
+#echo -e cat /sys/block/sda/device/timeout : "\n$(cat /sys/block/sda/device/timeout)"
 
 echo
 echo -e peak disk iops, wr_sec/s : "\n$(sar -d | tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
@@ -195,10 +226,26 @@ echo -e netstat -a : "\n$(netstat -a)"
 echo
 echo -e sar -A : "\n$(sar -A)"
 echo
-echo -e dmesg : "\n$(dmesg) | strings"
+#echo -e dmesg : "\n$(dmesg) | strings"
+echo -e dmesg : "\n$(dmesg --decode --show-delta -T)"
 echo
 echo -e sysctl -a : "\n$(sysctl -a 2>/dev/null)"
 echo
+
+echo
+env
+echo
+
+
+echo
+rpm -qa
+echo
+
+
+grep -e bd -e black -e blck -e protex -e codecenter /etc/passwd
+echo
+
+
 echo EXPERIMENTAL
 echo
 echo jstat needs to run as java user, sudo -u root \<this script\>...
@@ -209,9 +256,6 @@ echo jstat needs to run as java user, sudo -u root \<this script\>...
 #echo -e jstat -gccause : "\n$(jstat -gccause $(ps -C java -o pid | grep -v PID) 5 2)"
 #echo
 #echo -e jstat -gcutil : "\n$(jstat -gcutil $(ps -C java -o pid | grep -v PID) 5 2)"
-echo 
-df -hPT ; 
-echo ; 
 #TODO DFGREPFIXME: echo \'${mMountPointFilterIn}\' : \'${mMountPointFilterOut}\'
 #    df | grep " ${mMountPointFilterIn} " | grep -v " ${mMountPointFilterOut} " | tr -s ' ' | cut -d ' ' -f4,6 | while read mavail mdisk ; 
 #df | grep -e "DFGREPFIXME" -e ".*" | grep -v -e "DFGREPFIXME" -e docker -e overlay | tr -s ' ' | cut -d ' ' -f4,6 | while read mavail mdisk ; 
@@ -228,20 +272,15 @@ echo ;
 #done ; 
 #fi ; 
 #done 
-
+echo
+find /proc -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000
+find /sys  -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000 
+echo
 
 echo
 date
-date -u
-echo Done.
+date --utc
+echo Done $0.
 
 exit
 #REFERENCE
-[pjalajas@imp-px02 db]$ grep -e bd -e black -e blck /etc/passwd
-bds-protexip:x:1336:1297::/var/lib/bds-protexip:/bin/bash
-bdsroot:x:490:500:Used by OPS for backend SSH access in case of IPA failures or high level administration.:/home/bdsroot:/bin/bash
-
-
-
-
-
