@@ -1,9 +1,9 @@
-#!/bin/bash
-#SynopsysGatherServerSpecs_202007.bash
+#!/usr/bin/bash
+#SynopsysGatherServerSpecs_202009.bash
 #pjalajas@synopsys.com
 #License SPDX Apache-2.0
-#Version 2008141949Z # pj enable some Protex-specifics, not tested. 
-#grepvcksum: 3483071372 9558 
+#Version 2009061330Z # pj enable some Protex-specifics, not tested. 
+#grepvcksum: 
 
 #To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script.
 #Generally quite safe, even when run as root.  
