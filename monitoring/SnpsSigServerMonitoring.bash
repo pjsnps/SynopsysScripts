@@ -3,34 +3,34 @@
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION:  2009031616Z
-#CHANGELOG: pj  much cleaning
+#VERSION:  2009081721Z
+#CHANGELOG: pj skip docker if not docker server 
 #GREPVCKSUM:  TODO # grep -v grepvcksum SnpsSigServerMonitoring.bash | cksum 
 
-#PURPOSE:  A work in progress! Corrections, suggestions welcome. 
-#PURPOSE:  Intended to try to capture system state when a server crashes, etc.
+#PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc.
 
 #USAGE: mkdir -p log ; while true ; do sudo ./SnpsSigServerMonitoring.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigServerMonitoring.bash_$(hostname -f)_$(date +%Y%m%d).out.gz ; sleep 15s ; done
 #USAGE: sudo ./SnpsSigServerMonitoring.bash |& tee -a ./log/SnpsSigServerMonitoring.bash_$(hostname -f)_$(date +%Y%m%d).out
 #USAGE: sudo ./SnpsSigServerMonitoring.bash |& grep "^1L:" |& tee -a log/SnpsSigServerMonitoring.bash_$(hostname -f)_$(hostname -f)_$(date +%Y%m%d).out
 
 #REQUIREMENTS: (yum provides "*/<cmd name>")
+#These are more like suggestions as opposed to requirements; script will throw "ignorable" errors if these commands are not installed. 
 #iotop (sudo yum install iotop)
 #iostat (sudo yum install systat)
+#ss (provided by iproute/iproute2); netstat replacement
 
 #TODO: Add requirements to run this script, to above.  Extra credit: add how to install them if not obvious by its name.
-#TODO: Make docker tests options. Put docker command in if block. Would fix some errors. 
-#TODO: For output greppability, continue adding COMMAND string in these:  |& while read line ; do echo "$($LOGDATECMD) : COMMAND : $line" ; done   
-#TODO: Send some output errors to /dev/null.
-#DONE: A single loop is a few minutes, too long, miss detail near crash; so, find and disable the slowest tasks herein, if possible.
+#TODO: Add more legacy Black Duck Suite (Protex, Code Center) specifics. 
 #TODO: Many in-container tests are dumb, they just report the os info.  Can probably remove some useless, redundant.  Move some of these to a one-time server checker, like SynopsysGatherServerSpecs_202007.bash.  (not too urgent, just some wasted bytes, I think)
 #TODO: Low priority: change netstat to ss. 
 #TODO: Your improvement here. 
 
 #NOTES:
-#Tries to create "one-liners" for some consistently-structured  multi-line output, for "easier" grepping and parsing.  Grep for "^1L:" for those if you wish.
+#Tries to create "one-liners" for some consistently-structured multi-line output, for "easier" grepping and parsing (like with cut, sort, etc).  Grep for ":1L " for those if you wish.
 #This is really overkill in lots of ways, but trying to do it all in one shot.  Suggestions welcome.
-#Tries to prepend _every_ line with a good timestamp, for greppability.  
+#Tries to prepend _every_ line with a good timestamp, for greppability and sorting.
+
+#CONFIG
 
 #INIT
 
@@ -41,6 +41,10 @@ LOGDATECMD='date --utc +%Y-%m-%dT%H:%M:%S.%NZ' # reversible back into date -d if
 #MAIN
 echo
 echo $($LOGDATECMD):1L : Start 
+echo
+#Is this Black Duck (Hub)/Docker?  If not, skip those commands.  TODO: gotta be a better way...
+#[pjalajas@sup-pjalajas-2 monitoring]$ unset ISDOCKER ; ISDOCKER=$(ps auxww | grep -v grep | grep "java.*-Dblackduck.hub.docker.enabled=true" | wc -l) ; echo $ISDOCKER ; if [[ "$ISDOCKER" -gt "0" ]] ; then ISDOCKER=true ; else unset ISDOCKER ; fi ; if [[ "$ISDOCKER" ]] ; then echo is docker ; fi #5 #is docker #[pjalajas@sup-pjalajas-2 monitoring]$ unset ISDOCKER ; ISDOCKER=$(ps auxww | grep -v grep | grep "java.*-Dblackduck.hub.docker.enabled=truex" | wc -l) ; echo $ISDOCKER ; if [[ "$ISDOCKER" -gt "0" ]] ; then ISDOCKER=true ; else unset ISDOCKER ; fi ; if [[ "$ISDOCKER" ]] ; then echo is docker ; fi #0
+( unset ISDOCKER ; ISDOCKER=$(ps auxww | grep -v grep | grep "java.*-Dblackduck.hub.docker.enabled=true" | wc -l) ; echo -n "Number of java blackduck.hub.docker.enabled=true : $ISDOCKER : " ; if [[ "$ISDOCKER" -gt "0" ]] ; then ISDOCKER=true ; else unset ISDOCKER ; fi ; if [[ "$ISDOCKER" ]] ; then echo is docker ; else echo is not docker ; fi ) |& while read line ; do echo "$($LOGDATECMD):1L : is docker? : $line" ; done
 echo
 echo $($LOGDATECMD):1L : $(date +%Y-%m-%dT%H:%M:%S.%N%Z\ %a) : $(hostname -f) : $(whoami) : $(pwd) 
 echo
@@ -99,42 +103,148 @@ echo
 
 
 #TODO: put all docker tests here and wrap with an "is this a docker host" test
-echo
-echo $($LOGDATECMD) : monitoring docker 
-echo
-docker version |& while read line ; do echo "$($LOGDATECMD) : docker version : $line" ; done
-echo
-docker network ls |& while read line ; do echo "$($LOGDATECMD) : docker network ls : $line" ; done
-echo
-echo $($LOGDATECMD) : docker network inspect
-echo
-for NETWORKID in $(docker network ls -q) ; do
-  docker network ls | grep $NETWORKID |& while read line ; do echo "$($LOGDATECMD) : docker network inspect $NETWORKID : $line" ; done
-  docker network inspect $NETWORKID |& while read line ; do echo "$($LOGDATECMD) : docker network inspect $NETWORKID : $line" ; done
-  echo 
-done 
-echo
+if [[ "$ISDOCKER" ]] ; then
+  echo
+  echo $($LOGDATECMD) : monitoring docker 
+  echo
+  docker version |& while read line ; do echo "$($LOGDATECMD) : docker version : $line" ; done
+  echo
+  docker network ls |& while read line ; do echo "$($LOGDATECMD) : docker network ls : $line" ; done
+  echo
+  echo $($LOGDATECMD) : docker network inspect
+  echo
+  for NETWORKID in $(docker network ls -q) ; do
+    docker network ls | grep $NETWORKID |& while read line ; do echo "$($LOGDATECMD) : docker network inspect $NETWORKID : $line" ; done
+    docker network inspect $NETWORKID |& while read line ; do echo "$($LOGDATECMD) : docker network inspect $NETWORKID : $line" ; done
+    echo 
+  done 
+  echo
 
-docker network inspect |& while read line ; do echo "$($LOGDATECMD) : docker network ls : $line" ; done
-echo
+  docker network inspect |& while read line ; do echo "$($LOGDATECMD) : docker network ls : $line" ; done
+  echo
+  
+  echo $($LOGDATECMD) : docker ps -a 
+  echo
+  docker ps -a |& while read line ; do echo "$($LOGDATECMD) : docker ps -a : $line" ; done 
+  echo
+  echo $($LOGDATECMD):1L : docker ps wc : $(docker ps | wc -l)
+  echo
+  echo $($LOGDATECMD) : docker log errors : TODO:  take too long, manually enable if desired...
+  #TODO: print container info only if Errors are present. 
+  #mcontainerlist="nginx solr registration jobrunner webapp logstash zookeeper scan authentication postgres cfssl upload blackduck-upload-cache documentation"
+  mcontainerlist="$(docker ps -q)"
+  #for mcontainer in $mcontainerlist ; do docker logs $(docker ps | grep $mcontainer | cut -d\  -f1) 2>&1 | grep -e "^$(date --utc +%Y-%m-%d\ %H:%M)" -e "^$(date --utc +%Y-%m-%dT%H:%M)" | grep -e ERROR -e FAIL -e FATAL -e SEVER | grep -v -e "Attempting to fail orphaned jobs" | tail -n 5 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+  #TODO:  busy containers with ALL/TRACE logging take 10-15 minutes for each of these two docker log steps...kill for now...
+  #for mcontainer in $mcontainerlist ; do docker ps | grep $mcontainer ; docker container logs $mcontainer |& grep -e "^$(date --utc +%Y-%m-%d\ %H:%M)" -e "^$(date --utc +%Y-%m-%dT%H:%M)" | grep -e ERROR -e FAIL -e FATAL -e SEVER | grep -v -e "Attempting to fail orphaned jobs" | tail -n 5 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+  echo
+  echo $($LOGDATECMD) : docker logs tail : TODO:  take too long, manually enable if desired...
+  #for mcontainer in $mcontainerlist ; do docker ps | grep $mcontainer ; docker container logs $mcontainer |& grep -e "^$(date --utc +%Y-%m-%d\ %H:%M)" -e "^$(date --utc +%Y-%m-%dT%H:$M)" | tail -n 3 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+  echo
 
-echo $($LOGDATECMD) : docker ps -a 
-echo
-docker ps -a |& while read line ; do echo "$($LOGDATECMD) : docker ps -a : $line" ; done 
-echo
-echo $($LOGDATECMD):1L : docker ps wc : $(docker ps | wc -l)
-echo
-echo $($LOGDATECMD) : docker log errors : TODO:  take too long, manually enable if desired...
-#TODO: print container info only if Errors are present. 
-#mcontainerlist="nginx solr registration jobrunner webapp logstash zookeeper scan authentication postgres cfssl upload blackduck-upload-cache documentation"
-mcontainerlist="$(docker ps -q)"
-#for mcontainer in $mcontainerlist ; do docker logs $(docker ps | grep $mcontainer | cut -d\  -f1) 2>&1 | grep -e "^$(date --utc +%Y-%m-%d\ %H:%M)" -e "^$(date --utc +%Y-%m-%dT%H:%M)" | grep -e ERROR -e FAIL -e FATAL -e SEVER | grep -v -e "Attempting to fail orphaned jobs" | tail -n 5 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-#TODO:  busy containers with ALL/TRACE logging take 10-15 minutes for each of these two docker log steps...kill for now...
-#for mcontainer in $mcontainerlist ; do docker ps | grep $mcontainer ; docker container logs $mcontainer |& grep -e "^$(date --utc +%Y-%m-%d\ %H:%M)" -e "^$(date --utc +%Y-%m-%dT%H:%M)" | grep -e ERROR -e FAIL -e FATAL -e SEVER | grep -v -e "Attempting to fail orphaned jobs" | tail -n 5 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-echo
-echo $($LOGDATECMD) : docker logs tail : TODO:  take too long, manually enable if desired...
-#for mcontainer in $mcontainerlist ; do docker ps | grep $mcontainer ; docker container logs $mcontainer |& grep -e "^$(date --utc +%Y-%m-%d\ %H:%M)" -e "^$(date --utc +%Y-%m-%dT%H:$M)" | tail -n 3 ; done |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-echo
+  #TODO:  no vmstat in busybox
+    #echo container vmstat
+    #docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) vmstat --$mopt --wide 
+    #echo
+    #echo container vmstat one line
+    #docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) sh -c 'echo container vmstat --$mopt : $(vmstat --$mopt --wide)'
+    #echo
+
+
+  echo $($LOGDATECMD) : host lsof dockerd : 
+    lsof -p $(pgrep dockerd) 2> /dev/null | wc -l |& while read line ; do echo "$($LOGDATECMD) : host lsof dockerd wc : $line" ; done
+    echo
+    lsof -p $(pgrep dockerd) 2> /dev/null |& while read line ; do echo "$($LOGDATECMD) : host lsof dockerd : $line" ; done
+    echo
+  echo
+
+
+  echo
+  echo $($LOGDATECMD) : container netstat 
+  echo
+  for mcontainerid in $(docker ps -q) ; do
+    #echo \$mcontainerid = $mcontainerid
+    docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : container netstat -aeW $mcontainerid : $line" ; done
+    echo
+    echo $($LOGDATECMD) : container netstat -aeW
+    echo
+    docker container exec -u 0 $mcontainerid sh -c 'netstat -aeW' |& while read line ; do echo "$($LOGDATECMD) : container netstat -aeW $mcontainerid : $line" ; done
+    echo
+    #echo $($LOGDATECMD) : container cat /proc/net wc
+    #echo
+    #TODO: make sense?:  docker container exec -u 0 $mcontainerid sh -c 'find /proc/net -type f | xargs -I"%" grep -H ".*" "%" | wc -l' |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+    #echo
+    echo $($LOGDATECMD) : container cat /proc/net content
+    echo
+    docker container exec -u 0 $mcontainerid sh -c 'find /proc/net -type f | xargs -I"%" grep -H ".*" "%" '|& while read line ; do echo "$($LOGDATECMD) : container cat /proc/net content $mcontainerid : $line" ; done
+    echo
+  done
+
+  echo
+
+  echo $($LOGDATECMD) : monitoring container count open files 
+  #docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) echo $(lsof 2>/dev/null | wc -l)
+  for mcontainerid in $(docker ps -q) ; do
+    docker ps | grep $mcontainerid  |& while read line ; do echo "$($LOGDATECMD) : container open files $mcontainerid : $line" ; done
+    docker container exec -u 0 -it $mcontainerid sysctl fs.file-nr |& while read line ; do echo "$($LOGDATECMD) : container open files $mcontainerid : $line" ; done
+  done 
+  echo
+
+    #TODO: timeout 5 ping6 kb.blackducksoftware.com
+    #echo
+    #echo $($LOGDATECMD) : container ping kb.blackducksoftware.com 
+    #TODO: BUG HANGS: timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) ping kb.blackducksoftware.com
+    #for mcontainerid in $(docker ps -q) ; do
+      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $mcontainerid ping kb.blackducksoftware.com : $line" ; done
+      #ERROR: nginx, logstash only...?
+      #2020-08-29T20:42:39.413317073Z : BusyBox v1.30.1 (2019-10-26 11:23:07 UTC) multi-call binary.
+      #2020-08-29T20:42:39.416523953Z : Usage: timeout [-s SIG] SECS PROG ARGS
+      #docker container exec -u 0 -it $mcontainerid timeout -t 5 ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+      #20200903 hangs, not sure why:  timeout 5s docker container exec -u 0 -it $mcontainerid ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $mcontainerid ping kb.blackducksoftware.com : $line" ; done
+    #done
+    #BUG HANGS: timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) ping6 kb.blackducksoftware.com
+    #echo
+
+    #TODO hangs, not sure why
+    #echo $($LOGDATECMD) : container traceroute kb.blackducksoftware.com 
+    #for mcontainerid in $(docker ps -q) ; do
+      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+      ##docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 30 traceroute kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+      #timeout 5s docker container exec -u 0 -it $mcontainerid timeout 5 traceroute kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+      #echo
+      ##docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 5 traceroute6 kb.blackducksoftware.com
+    #done
+    #echo
+
+
+  #TODO: hangs
+  #echo $($LOGDATECMD) : monitoring container wget $mopt
+    ##timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) "wget --spider -S https://kb.blackducksoftware.com 2>&1"
+  ##docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 5 wget --spider -S https://kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+    #for mcontainerid in $(docker ps -q) ; do
+      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+      #timeout 5s docker container exec -u 0 -it $mcontainerid wget --spider -S https://kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+      #echo
+    #done
+  #echo $($LOGDATECMD) : monitoring container wget $mopt/api/authenticate
+  ##405 Method Not Allowed is ok
+  ##time (docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 5 wget --spider -S https://kb.blackducksoftware.com/api/authenticate) |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+    #for mcontainerid in $(docker ps -q) ; do
+      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $line" ; done 
+      #time (timeout 5s docker container exec -u 0 -it $mcontainerid wget --spider -S https://kb.blackducksoftware.com/api/authenticate) |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
+    #done
+
+  #no ssl in busybox: echo monitoring containeopenssl $mopt
+    #timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) traceroute6 kb.blackducksoftware.com
+
+
+
+fi # is docker 
+
+
+
+
+
+
 
 echo monitoring vmstat
 # Options:
@@ -158,13 +268,6 @@ do
   echo $($LOGDATECMD) : host vmstat --$mopt one line
   echo $($LOGDATECMD):1L : host vmstat --$mopt : $(vmstat --$mopt --wide)
   echo
-  #no vmstat in busybox
-    #echo container vmstat
-    #docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) vmstat --$mopt --wide 
-    #echo
-    #echo container vmstat one line
-    #docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) sh -c 'echo container vmstat --$mopt : $(vmstat --$mopt --wide)'
-    #echo
 done
 
 echo $($LOGDATECMD) : host /proc/net : 
@@ -172,13 +275,6 @@ echo $($LOGDATECMD) : host /proc/net :
   find /proc/net/ -type f | xargs grep -H ".*" | wc -l |& while read line ; do echo "$($LOGDATECMD) : host /proc/net/ wc : $line" ; done
   echo
   find /proc/net/ -type f | xargs grep -H ".*" |& while read line ; do echo "$($LOGDATECMD) : host /proc/net/ $line" ; done
-  echo
-echo
-
-echo $($LOGDATECMD) : host lsof dockerd : 
-  lsof -p $(pgrep dockerd) 2> /dev/null | wc -l |& while read line ; do echo "$($LOGDATECMD) : host lsof dockerd wc : $line" ; done
-  echo
-  lsof -p $(pgrep dockerd) 2> /dev/null |& while read line ; do echo "$($LOGDATECMD) : host lsof dockerd : $line" ; done
   echo
 echo
 
@@ -206,30 +302,6 @@ echo
   netstat --timers |& while read line ; do echo "$($LOGDATECMD) : host netstat timers : $line" ; done
 
 
-
-  echo
-  echo $($LOGDATECMD) : container netstat 
-  echo
-  for mcontainerid in $(docker ps -q) ; do
-    #echo \$mcontainerid = $mcontainerid
-    docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : container netstat -aeW $mcontainerid : $line" ; done
-    echo
-    echo $($LOGDATECMD) : container netstat -aeW
-    echo
-    docker container exec -u 0 $mcontainerid sh -c 'netstat -aeW' |& while read line ; do echo "$($LOGDATECMD) : container netstat -aeW $mcontainerid : $line" ; done
-    echo
-    #echo $($LOGDATECMD) : container cat /proc/net wc
-    #echo
-    #TODO: make sense?:  docker container exec -u 0 $mcontainerid sh -c 'find /proc/net -type f | xargs -I"%" grep -H ".*" "%" | wc -l' |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-    #echo
-    echo $($LOGDATECMD) : container cat /proc/net content
-    echo
-    docker container exec -u 0 $mcontainerid sh -c 'find /proc/net -type f | xargs -I"%" grep -H ".*" "%" '|& while read line ; do echo "$($LOGDATECMD) : container cat /proc/net content $mcontainerid : $line" ; done
-    echo
-  done
-
-  echo
-
 echo $($LOGDATECMD) : monitoring ss 
   echo
   ss -s |& while read line ; do echo "$($LOGDATECMD) : ss -s : $line" ; done
@@ -256,21 +328,6 @@ echo
     echo $($LOGDATECMD) : host ping kb.blackducksoftware.com 
     timeout 5s ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : host ping kb.blackducksoftware.com : $line" ; done
     echo
-    #TODO: timeout 5 ping6 kb.blackducksoftware.com
-    #echo
-    #echo $($LOGDATECMD) : container ping kb.blackducksoftware.com 
-    #TODO: BUG HANGS: timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) ping kb.blackducksoftware.com
-    #for mcontainerid in $(docker ps -q) ; do
-      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $mcontainerid ping kb.blackducksoftware.com : $line" ; done
-      #ERROR: nginx, logstash only...?
-      #2020-08-29T20:42:39.413317073Z : BusyBox v1.30.1 (2019-10-26 11:23:07 UTC) multi-call binary.
-      #2020-08-29T20:42:39.416523953Z : Usage: timeout [-s SIG] SECS PROG ARGS
-      #docker container exec -u 0 -it $mcontainerid timeout -t 5 ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      #20200903 hangs, not sure why:  timeout 5s docker container exec -u 0 -it $mcontainerid ping kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $mcontainerid ping kb.blackducksoftware.com : $line" ; done
-    #done
-    #BUG HANGS: timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) ping6 kb.blackducksoftware.com
-    echo
-
 
     echo
     echo $($LOGDATECMD) : monitoring traceroute kb.blackducksoftware.com
@@ -280,16 +337,6 @@ echo
     #timeout 10 tracepath6 kb.blackducksoftware.com
     #echo
     echo
-    #TODO hangs, not sure why
-    #echo $($LOGDATECMD) : container traceroute kb.blackducksoftware.com 
-    #for mcontainerid in $(docker ps -q) ; do
-      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      ##docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 30 traceroute kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      #timeout 5s docker container exec -u 0 -it $mcontainerid timeout 5 traceroute kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      #echo
-      ##docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 5 traceroute6 kb.blackducksoftware.com
-    #done
-    #echo
   #done
 #done
 
@@ -302,29 +349,10 @@ do
   #            DNS:*.blackducksoftware.com, DNS:blackducksoftware.com
   echo $($LOGDATECMD) : monitoring host openssl $mopt
   time (echo -n | openssl s_client -connect $mopt:443 2>&1 | openssl x509 -text | grep -e Subject: -e Issuer: -e DNS) |& while read line ; do echo "$($LOGDATECMD) : openssl $mopt : $line" ; done
-  #no ssl in busybox: echo monitoring containeopenssl $mopt
-    #timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) traceroute6 kb.blackducksoftware.com
   echo
 done
 echo
 
-
-  #TODO: hangs
-  #echo $($LOGDATECMD) : monitoring container wget $mopt
-    ##timeout 5 docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) "wget --spider -S https://kb.blackducksoftware.com 2>&1"
-  ##docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 5 wget --spider -S https://kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-    #for mcontainerid in $(docker ps -q) ; do
-      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      #timeout 5s docker container exec -u 0 -it $mcontainerid wget --spider -S https://kb.blackducksoftware.com |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-      #echo
-    #done
-  #echo $($LOGDATECMD) : monitoring container wget $mopt/api/authenticate
-  ##405 Method Not Allowed is ok
-  ##time (docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) timeout -t 5 wget --spider -S https://kb.blackducksoftware.com/api/authenticate) |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-    #for mcontainerid in $(docker ps -q) ; do
-      #docker ps | grep $mcontainerid |& while read line ; do echo "$($LOGDATECMD) : $line" ; done 
-      #time (timeout 5s docker container exec -u 0 -it $mcontainerid wget --spider -S https://kb.blackducksoftware.com/api/authenticate) |& while read line ; do echo "$($LOGDATECMD) : $line" ; done
-    #done
 #done
 
   echo
@@ -334,16 +362,9 @@ echo
   echo
   echo $($LOGDATECMD):1L : systctl fs.file-nr : $(sysctl fs.file-nr)
   echo
-  echo $($LOGDATECMD) : monitoring container count open files 
-  #docker container exec -u 0 -it $(docker ps | grep $mcontainer | cut -d\  -f1) echo $(lsof 2>/dev/null | wc -l)
-  for mcontainerid in $(docker ps -q) ; do
-    docker ps | grep $mcontainerid  |& while read line ; do echo "$($LOGDATECMD) : container open files $mcontainerid : $line" ; done
-    docker container exec -u 0 -it $mcontainerid sysctl fs.file-nr |& while read line ; do echo "$($LOGDATECMD) : container open files $mcontainerid : $line" ; done
-  done 
-  echo
 
   echo
-  echo $($LOGDATECMD) : TODO tcpdump? cloudfront ok? 
+  #echo $($LOGDATECMD) : TODO tcpdump? cloudfront ok? 
 	#tcpdump 'tcp[tcpflags] & (tcp-syn|tcp-fin) != 0 and not src and dst net 10.1.65.171/24'
 	#tcpdump: non-network bits set in "10.1.65.171/24"
 	#[pjalajas@sup-pjalajas-hub ~]$ tcpdump 'tcp[tcpflags] & (tcp-syn|tcp-fin) != 0 and not src and dst net 10.1.65.0/24'
@@ -367,21 +388,6 @@ echo $($LOGDATECMD):1L : Done
 
 exit
 #REFERENCE
-
-#https://serverfault.com/a/885773
-#      tcpdump [ -AbdDefhHIJKlLnNOpqStuUvxX# ] [ -B buffer_size ]
-               #[ -c count ]
-               #[ -C file_size ] [ -G rotate_seconds ] [ -F file ]
-               #[ -i interface ] [ -j tstamp_type ] [ -m module ] [ -M secret ]
-               #[ --number ] [ -Q|-P in|out|inout ]
-               #[ -r file ] [ -V file ] [ -s snaplen ] [ -T type ] [ -w file ]
-               #[ -W filecount ]
-               #[ -E spi@ipaddr algo:secret,...  ]
-               #[ -y datalinktype ] [ -z postrotate-command ] [ -Z user ]
-               #[ --time-stamp-precision=tstamp_precision ]
-               #[ --immediate-mode ] [ --version ]
-               #[ expression ]
-
 
 busybox:
 Currently defined functions:
