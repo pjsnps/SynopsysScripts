@@ -9,9 +9,8 @@
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc.
 
-#USAGE: mkdir -p log ; while true ; do sudo ./SnpsSigServerMonitoring.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigServerMonitoring.bash_$(hostname -f)_$(date +%Y%m%d).out.gz ; sleep 15s ; done
-#USAGE: sudo ./SnpsSigServerMonitoring.bash |& tee -a ./log/SnpsSigServerMonitoring.bash_$(hostname -f)_$(date +%Y%m%d).out
-#USAGE: sudo ./SnpsSigServerMonitoring.bash |& grep "^1L:" |& tee -a log/SnpsSigServerMonitoring.bash_$(hostname -f)_$(hostname -f)_$(date +%Y%m%d).out
+#USAGE: Check, resolve REQUIREMENTS
+#USAGE: mkdir -p log ; sudo bash -c 'export mlogtime=$(date +%Y%m%d%H%M%SZ%a) ; while true ; do ./SnpsSigServerMonitoring.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigServerMonitoring.bash_$(hostname -f)_${mlogtime}PJ.out.gz ; echo sleeping ; sleep 1s ; done' 
 
 #REQUIREMENTS: (yum provides "*/<cmd name>")
 #These are more like suggestions as opposed to requirements; script will throw "ignorable" errors if these commands are not installed. 
@@ -23,7 +22,7 @@
 #TODO: Add more legacy Black Duck Suite (Protex, Code Center) specifics. 
 #TODO: Many in-container tests are dumb, they just report the os info.  Can probably remove some useless, redundant.  Move some of these to a one-time server checker, like SynopsysGatherServerSpecs_202007.bash.  (not too urgent, just some wasted bytes, I think)
 #TODO: Low priority: change netstat to ss. 
-#TODO: Your improvement here. 
+#TODO: Your improvements here. 
 
 #NOTES:
 #Tries to create "one-liners" for some consistently-structured multi-line output, for "easier" grepping and parsing (like with cut, sort, etc).  Grep for ":1L " for those if you wish.
