@@ -2,20 +2,20 @@
 shopt -s extglob
 #set +x
 
-#SCRIPT:     SnpsSigLogProcessor.bash (was SnpsSigLogIdentifier.bash)
+#SCRIPT:     SnpsSigSup_LogProcessor.bash (was SnpsSigLogProcessor.bash, which was SnpsSigLogIdentifier.bash)
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-08-23
-#VERSION:    2009040127Z # :r ! date -u +\%y\%m\%d\%H\%MZ
+#VERSION:    :r ! date -u +\%y\%m\%d\%H\%MZ : 2009121317Z
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
-#CHANGELOG: 2009040127Z pj progress indicator; add Z to HxxZ.log output file name.
+#CHANGELOG: 2009121317Z pj rename, try to make progress
 
 #PURPOSE:    Plan is still evolving, probably different from what is stated herein.  Identify what kind of log we are processing, and process it.  "Process" meaning, rationalize or normalize, to make them more consistent and complete.  To be used in pipeline before loginterlacer.bash; keep loginterlacing.bash just for the interlacing task, not pre-preprocessing which is what this script does..
 
 #USAGE: See REFERENCE section at bottom of this script. Currently works only on logs downloaded from Black Duck (Hub) Administration, System Settings, System Logs; download and extract from that .zip the logs of interest.   Accepts a (optional?) log path/filename in position one.  Need path to hint at log line date format by parsing container name from path.  Outputs formatted hourly log files to ${mdirname}/${mbasename}.H${mhour}.log. Ingesting of separate log files into this scriptcan be multithreaded like with parallel or xargs, but not /within/ processing each ingested log file (else the output lines will be out of order; not fatal, but the output hourly log files will need to be sorted afterwards.)
-#USAGE: #mdate=2020-09-02 ; find /home/pjalajas/Downloads/hub-webserver_bds_logs-20200904T011849/hub-jobrunner/app-log -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogProcessor.bash '{}'    
+#USAGE: #mdate=2020-09-02 ; find /home/pjalajas/Downloads/hub-webserver_bds_logs-20200904T011849/hub-jobrunner/app-log -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigSup_LogProcessor.bash '{}'    
 
-#DISCUSSION:  Need to deal with log files of day X in EDT, but after processing last few records late in day X EDT are in early day Y UTC/Z--which output date-stamped log file (2020-09-02HxxZ.log) should they go into? 
+#DISCUSSION:  Need to deal with log files of day X in EDT, but after processing last few records late in day X EDT are in early day Y UTC/Z--which output date-stamped log file (2020-09-02HxxZ.log) should they go into? Guessing, simply just back into the same "wrong" dated file from where it came, but not sure.         #If container root log level set to ALL, log file as downloaded from Black Duck web ui can be very large. I think that log file, and I think the "docker container logs" output, is from the log4j2.properties console appender, vs the file appender; so, if true, and if we configure that console appender to rotate at a reasonable size, not sure if that web ui download would download all those split rotated logs or just the latest; TODO: test that; else, may need to morph this thing to grab smaller rotated logs from docker container via command line....  
 
 #DEVPLAN:  
 # Done?:  Prepend last-known timestamp to lines with no timestamp (like java stack traces), with "~", "ca" or "estim" (don't confuse with EST timezone).
@@ -24,9 +24,10 @@ shopt -s extglob
 
 
 #TODO:  Create a datetimestamp rationalizer library script.  Input anything that kind of resembles a date, and it will output a reversible datetime stamp.
-#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogProcessor.bash '{}'
+#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/customer/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigSup_LogProcessor.bash '{}'
      #  trying shopt -s extglob, failed
 #TODO multithread processing of log lines, but sort back into timestamp order when done.  
+#TODO: should I break some of these commands into separate "library-like" files and use bash "source <file>" in these script to import them as needed?
 #TODO: ____ 
 
 #CONFIG
@@ -51,7 +52,7 @@ printlogdate() { date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a ; } # For prepending to o
 
 
 #MAIN
-  #like:  /home/pjalajas/dev/customers/netapp/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-authentication/app-log/2020-08-13.log
+  #like:  /home/pjalajas/dev/customers/customer/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-authentication/app-log/2020-08-13.log
   #if [[ "$mdebug" == "DEBUG" ]] ; then echo "$(head $filepathname)" ; fi
   mlogtype="$(echo $mfilepathname | sed -re 's#^.*(/hub-.*$)#\1#g' | cut -d/ -f2,3)"
   #echo $mlogtype
