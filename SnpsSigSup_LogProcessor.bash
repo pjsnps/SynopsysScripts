@@ -2,20 +2,21 @@
 shopt -s extglob
 #set +x
 
-#SCRIPT:     SnpsSigLogProcessor.bash (was SnpsSigLogIdentifier.bash)
+#SCRIPT:     SnpsSigSup_LogProcessor.bash (was SnpsSigLogProcessor.bash, which was SnpsSigLogIdentifier.bash)
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-08-23
-#VERSION:    2009040127Z # :r ! date -u +\%y\%m\%d\%H\%MZ
+#VERSION:    :r ! date -u +\%y\%m\%d\%H\%MZ : 2009121317Z
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
-#CHANGELOG: 2009040127Z pj progress indicator; add Z to HxxZ.log output file name.
+#CHANGELOG: 2009121317Z pj rename, try to make progress
 
 #PURPOSE:    Plan is still evolving, probably different from what is stated herein.  Identify what kind of log we are processing, and process it.  "Process" meaning, rationalize or normalize, to make them more consistent and complete.  To be used in pipeline before loginterlacer.bash; keep loginterlacing.bash just for the interlacing task, not pre-preprocessing which is what this script does..
 
 #USAGE: See REFERENCE section at bottom of this script. Currently works only on logs downloaded from Black Duck (Hub) Administration, System Settings, System Logs; download and extract from that .zip the logs of interest.   Accepts a (optional?) log path/filename in position one.  Need path to hint at log line date format by parsing container name from path.  Outputs formatted hourly log files to ${mdirname}/${mbasename}.H${mhour}.log. Ingesting of separate log files into this scriptcan be multithreaded like with parallel or xargs, but not /within/ processing each ingested log file (else the output lines will be out of order; not fatal, but the output hourly log files will need to be sorted afterwards.)
-#USAGE: #mdate=2020-09-02 ; find /home/pjalajas/Downloads/hub-webserver_bds_logs-20200904T011849/hub-jobrunner/app-log -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogProcessor.bash '{}'    
+#USAGE: #mdate=2020-09-02 ; find /home/pjalajas/Downloads/hub-webserver_bds_logs-20200904T011849/hub-jobrunner/app-log -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigSup_LogProcessor.bash '{}'    
 
-#DISCUSSION:  Need to deal with log files of day X in EDT, but after processing last few records late in day X EDT are in early day Y UTC/Z--which output date-stamped log file (2020-09-02HxxZ.log) should they go into? 
+#DISCUSSION:  Need to deal with log files of day X in EDT, but after processing last few records late in day X EDT are in early day Y UTC/Z--which output date-stamped log file (2020-09-02HxxZ.log) should they go into? Guessing, simply just back into the same "wrong" dated file from where it came, but not sure.         
+#If container root log level set to ALL, log file as downloaded from Black Duck web ui can be very large. I think that log file, and I think the "docker container logs" output, is from the log4j2.properties console appender, vs the file appender; so, if true, and if we configure that console appender to rotate at a reasonable size, not sure if that web ui download would download all those split rotated logs or just the latest; TODO: test that; else, may need to morph this thing to grab smaller rotated logs from docker container via command line.... Maybe need to split huge logs instead of into hours *-HhhZ.log files, maybe need to split into *-HnnMmZ.log (10-minutely logs) (easy to cat back together as needed).  
 
 #DEVPLAN:  
 # Done?:  Prepend last-known timestamp to lines with no timestamp (like java stack traces), with "~", "ca" or "estim" (don't confuse with EST timezone).
@@ -24,9 +25,10 @@ shopt -s extglob
 
 
 #TODO:  Create a datetimestamp rationalizer library script.  Input anything that kind of resembles a date, and it will output a reversible datetime stamp.
-#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogProcessor.bash '{}'
+#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/customer/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigSup_LogProcessor.bash '{}'
      #  trying shopt -s extglob, failed
 #TODO multithread processing of log lines, but sort back into timestamp order when done.  
+#TODO: should I break some of these commands into separate "library-like" files and use bash "source <file>" in these script to import them as needed?
 #TODO: ____ 
 
 #CONFIG
@@ -34,6 +36,7 @@ shopt -s extglob
 
 
 #INIT
+#set -x
 set -o errexit # exit immediately when it encounters a non-zero exit code
 set -o nounset # exit if an attempt is made to expand an unset variable
 mfilepathname="${1}"
@@ -42,6 +45,7 @@ mfilepathname="${1}"
 mlastknowngooddate=''
 #TODO: deal with midnight crossings
 #mdebug="${___:-prod}" # DEBUG
+mlinecounter=0 # for progress indicator
 
 
 
@@ -51,7 +55,7 @@ printlogdate() { date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a ; } # For prepending to o
 
 
 #MAIN
-  #like:  /home/pjalajas/dev/customers/netapp/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-authentication/app-log/2020-08-13.log
+  #like:  /home/pjalajas/dev/customers/customer/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-authentication/app-log/2020-08-13.log
   #if [[ "$mdebug" == "DEBUG" ]] ; then echo "$(head $filepathname)" ; fi
   mlogtype="$(echo $mfilepathname | sed -re 's#^.*(/hub-.*$)#\1#g' | cut -d/ -f2,3)"
   #echo $mlogtype
@@ -79,6 +83,32 @@ printlogdate() { date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a ; } # For prepending to o
           #fi
           #echo -n \.
           #echo LINENO $LINENO
+          
+          
+          #JOINUP wrap lines not starting with [ to line above ; may be many in a row, may make a very, very long line starting with [
+          echo "$mline" | grep "^\[" > /dev/null 2>&1 
+          if [[ "$?" == "0" ]] ; then
+            #starts with [ so a good line
+            mnextline=""
+          else
+            #bad line, so append to prior good line and its appendages if any
+            mnextline="$mline"
+            #TODO:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ cat /home/pjalajas/dev/customers/N001340/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-jobrunner/app-log/2020-08-13.log | grep -C20 "^\s*at " | head -n 200 | sed -z 's/\n[^\[]/____JOINEDUP____/g'
+            echo 'WORKING HERE:   need to change this loop to test for line starting with \[ and if does start with \[, process fully \; if doesnt start with \[, then append to prior line and "continue".   OR:   need to decide which is more expensive to process, OR, which/when is best to use the power of parallel.  _____________'  
+          fi
+
+
+            echo 'WORKING HERE:   need to change this loop to test for line starting with \[ and if does start with \[, process fully \; if doesnt start with \[, then append to prior line and "continue".   OR:   need to decide which is more expensive to process, OR, which/when is best to use the power of parallel.  _____________'  
+
+
+       
+          exit
+
+
+
+
+
+
           case $mlogtype in
             hub-authentication/app-log|hub-jobrunner/app-log|hub-registration/app-log|hub-scan/app-log|hub-webapp/app-log)
               #[d5c907168077] 2020-08-13 00:00:36,589Z[GMT] [https-jsse-nio-8443-exec-3] INFO  com.blackducksoftware.usermgmt.authentication.provider.UserMgmtUserDetailsService - Loading user: sysadmin
@@ -133,14 +163,23 @@ printlogdate() { date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a ; } # For prepending to o
     
           #"mworking" date strings should all be good at this point, one way or the other:
           mhour="$(date --utc +%H -d "${mworking}")"  # for creating new more manageable hourly log files with this hour appended to original log filename
-          mminute=$(date --utc +%M -d "${mworking}") # for progress indicator, such as it is
           mworking="[li:$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a -d "${mworking}")${mestimated}]"
-          if [[ "$mminute" == "00" ]] ; then echo -n '.' ; fi # poor-man's progress indicator for every 10 minutes of logs lines
           #echo "${mhour} :: ${mworking} :: ${mline}" # TESTING
           #TODO try to make indempotent...
           #TODO append, to the prepend, an abbrev original log filename, like authapp or jrapp, so user can follow up
+          #TODO: try to make every 10 minutes? 
           echo "${mworking} ${mline}" >> ${mdirname}/${mbasename}.H${mhour}Z.log # TODO make log filename acceptable as input into date -d, like 2020-08-13T18:00Z.log
-
+          
+          #PROGRESS INDICATOR
+          #instead, user parallel --bar
+          #mminute=$(date --utc +%M -d "${mworking}") # for progress indicator, such as it is
+          meveryxlines=100
+          #if [[ "$mminute" == "00" ]] ; then echo -n '.' ; fi # poor-man's progress indicator for every 10 minutes of logs lines
+          #mlinecounter=$((mlinecounter+1))
+          #mmod=$((mlinecounter % $meveryxlines))
+          #echo \$mmod:$mmod
+          #if [[ "$mmod" == "0" ]] ; then echo -n '.' ; fi
+   
         done
 
 
