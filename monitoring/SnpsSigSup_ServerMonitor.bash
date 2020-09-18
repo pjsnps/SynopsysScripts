@@ -3,8 +3,8 @@
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009180139Z
-#GREPVCKSUM:  grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # 2271208594 29514
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009180147Z
+#GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # 3488697280 29538
 #CHANGELOG: pj added some protex and postgres
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc. Primarily for new Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
@@ -12,7 +12,7 @@
 #USAGE: Check and resolve REQUIREMENTS, CONFIGS.  Run on each host (docker, protex, postgresql (e.g. if externaldb), codecenter (not yet implemented)).  
 #USAGE: mkdir -p log ; sudo bash -c 'export mlogtime=$(date +%Y%m%d%H%M%SZ%a) ; while true ; do ./SnpsSigSup_ServerMonitor.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigSup_ServerMonitor.bash_$(hostname -f)_${mlogtime}PJ.out.gz ; echo sleeping ; sleep 1s ; done' 
 #USAGE: Check for errors, including missing requirements with like: scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo yum install iotop procps -y ; sudo ~/SnpsSigSup_ServerMonitor.bash >/dev/null"
-#USAGE: scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo -S yum --quiet install iotop procps strace nmap -y ; sudo ~/SnpsSigSup_ServerMonitor.bash " >& /tmp/out # type password in when not prompted (TODO! FIXME)
+#USAGE: To run on remote host:  scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo -S yum --quiet install iotop procps strace nmap -y ; sudo ~/SnpsSigSup_ServerMonitor.bash " >& /tmp/out # type password in when not prompted (TODO! FIXME)
 
 
 #REQUIREMENTS: (find installation package name with something like: yum provides "*/<cmd name>")
