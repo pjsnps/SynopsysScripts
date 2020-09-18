@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT:  https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009181352Z
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009181522Z
 #GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # ____
 #CHANGELOG: pj added some protex and postgres
 
@@ -25,12 +25,22 @@
 #strace
 #nc (in nmap)
 
-#TODO: Add grep /var/log/messages for docker, postgres, java, oom Killed, etc [pjalajas@sup-px05 ~]$ sudo grep -e docker -e java -e postgres -e error -e fatal -e fail -e sever /var/log/messages | tail | cut -c1-200
-#TODO: Add recommendations for better logging in docker, container, protex/tomcat, postgres (/var/lib/bds-protexip/data/postgresql.conf), codecenter/tomcat, java (ex ssl debug; jmx?) #        [pjalajas@sup-px05 ~]$ sudo find /opt/blackduck/ -type f -iname "*log*prop*" | grep -v -e tmp -e backup -e trial /opt/blackduck/protexIP/client-tomcat/conf/log4j.properties /opt/blackduck/protexIP/lib/jre/lib/logging.properties /opt/blackduck/protexIP/tomcat/lib/log4j.properties /opt/blackduck/protexIP/tomcat/lib/__MACOSX/._log4j.properties /opt/blackduck/protexIP/tomcat/conf/logging.properties.dist
-#TODO: logging levels: Standard log levels built-in to Log4J Standard Level	intLevel OFF 0       FATAL 100         ERROR 200         WARN 300      INFO 400      DEBUG 500      TRACE 600        ALL Integer.MAX_VALUE                  Add:  MaxBackupIndex and compression to limit log disk space usage.   Add: maybe set hourly rollover with FileNamePattern.
+#TODO: Add more legacy Black Duck Suite (Protex, Code Center) specifics. 
+#TODO: Add recommendations for better logging in docker, container, protex/tomcat, postgres (/var/lib/bds-protexip/data/postgresql.conf), codecenter/tomcat, java (ex ssl debug; jmx?) #        [pjalajas@sup-px05 ~]$ sudo find /opt/blackduck/ -type f -iname "*log*prop*" | grep -v -e tmp -e backup -e trial /opt/blackduck/protexIP/client-tomcat/conf/log4j.properties /opt/blackduck/protexIP/lib/jre/lib/logging.properties /opt/blackduck/protexIP/tomcat/lib/log4j.properties /opt/blackduck/protexIP/tomcat/lib/__MACOSX/._log4j.properties /opt/blackduck/protexIP/tomcat/conf/logging.properties.dist.         
+
+#TODO:  java debugging:  export JAVA_TOOL_OPTIONS=" -D... "            -Djavax.net.debug=ssl,handshake  or just =ssl, or just -Djavax.net.debug if not an ssl issue
+
+#TODO:  docker debugging:  docker --debug=true --log-level=debug stack deploy ...
+#TODO:  docker daemon debugging:  /etc/docker/daemon.json { "debug": true, "log-level": "debug" }
+#TODO:  docker container debugging:  docker container exec -u0 $(docker ps | grep jobrunner | cut -d\  -f1) sed -i 's/rootLogger.level=info/rootLogger.level=all/' /opt/blackduck/hub/jobrunner/conf/log4j2.properties
+
+#TODO:  Protex debugging:  
+#  ___logger.<category> DEBUG, INFO, WARN, ERROR, FATAL Category specific Change the log level for a specific category. 7.0
+#  ___blackduck.legacy.connection.pool.debug boolean false When true, enables logging of BDSSharedJDBCConnectionPool status. See PROTEX-17159. 7.0.0 
+#  ___blackduck.legacy.connection.pool.debug.check.interval long 500 When debugging is enabled, the number of milliseconds to wait between checks for requests for pool status. See PROTEX-17159. 7.0.0
+#TODO: java/log4j logging levels: Standard log levels built-in to Log4J Standard Level	intLevel OFF 0       FATAL 100         ERROR 200         WARN 300      INFO 400      DEBUG 500      TRACE 600        ALL Integer.MAX_VALUE                  Add:  MaxBackupIndex and compression to limit log disk space usage.   Add: maybe set hourly rollover with FileNamePattern.
  
 #TODO: Add requirements to run this script, to above.  Extra credit: add how to install them if not obvious by its name.
-#TODO: Add more legacy Black Duck Suite (Protex, Code Center) specifics. 
 #TODO: Many in-container tests are dumb, they just report the os info.  Can probably remove some useless, redundant.  Move some of these to a one-time server checker, like SynopsysGatherServerSpecs_202007.bash.  (not too urgent, just some wasted bytes, I think)
 #TODO: Low priority: change netstat to ss. 
 #TODO: Your improvements here. 
@@ -457,6 +467,15 @@ echo
 	#23:15:05.253545 IP kb.blackducksoftware.com.https > 172.18.0.5.56524: Flags [FP.], seq 4176:4207, ack 701, win 23, options [nop,nop,TS val 1781015748 ecr 2815570773], length 31
 	#23:15:05.254390 IP 172.18.0.5.56524 > kb.blackducksoftware.com.https: Flags [F.], seq 732, ack 4208, win 306, options [nop,nop,TS val 2815570826 ecr 1781015748], length 0
   echo
+
+#TODO: Add grep /var/log/messages for docker, postgres, java, oom Killed, etc [pjalajas@sup-px05 ~]$ sudo grep -e docker -e java -e postgres -e error -e fatal -e fail -e sever /var/log/messages | tail | cut -c1-200
+  echo
+  echo $($LOGDATECMD) : monitoring /var/log/messages
+  grep -e docker -e java -e postgres -e error -e fatal -e fail -e sever /var/log/messages | tail -n 100 | cut -c1-200 |& while read line ; do echo "$($LOGDATECMD) : /var/log/messages : $line" ; done
+  echo
+
+
+
 
 echo $($LOGDATECMD):1L : Done 
 
