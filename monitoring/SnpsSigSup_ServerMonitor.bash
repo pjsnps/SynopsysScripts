@@ -3,20 +3,26 @@
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION:  2009082201Z
-#CHANGELOG: pj change name to SnpsSigSup_ServerMonitor.bash, add _some_ protex monitoring
-#GREPVCKSUM:  TODO # grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum 
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009180139Z
+#GREPVCKSUM:  grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # 2271208594 29514
+#CHANGELOG: pj added some protex and postgres
 
-#PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc.
+#PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc. Primarily for new Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
 
-#USAGE: Check, resolve REQUIREMENTS, CONFIGS.  Run on each host (docker, protex, postgresql (e.g. if externaldb), codecenter (not yet implemented)).  
+#USAGE: Check and resolve REQUIREMENTS, CONFIGS.  Run on each host (docker, protex, postgresql (e.g. if externaldb), codecenter (not yet implemented)).  
 #USAGE: mkdir -p log ; sudo bash -c 'export mlogtime=$(date +%Y%m%d%H%M%SZ%a) ; while true ; do ./SnpsSigSup_ServerMonitor.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigSup_ServerMonitor.bash_$(hostname -f)_${mlogtime}PJ.out.gz ; echo sleeping ; sleep 1s ; done' 
+#USAGE: Check for errors, including missing requirements with like: scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo yum install iotop procps -y ; sudo ~/SnpsSigSup_ServerMonitor.bash >/dev/null"
+#USAGE: scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo -S yum --quiet install iotop procps strace nmap -y ; sudo ~/SnpsSigSup_ServerMonitor.bash " >& /tmp/out # type password in when not prompted (TODO! FIXME)
 
-#REQUIREMENTS: (yum provides "*/<cmd name>")
+
+#REQUIREMENTS: (find installation package name with something like: yum provides "*/<cmd name>")
 #These are more like suggestions as opposed to requirements; script will throw "ignorable" errors if these commands are not installed. 
 #iotop (sudo yum install iotop)
 #iostat (sudo yum install systat)
 #ss (provided by iproute/iproute2); netstat replacement
+#sysctl (in procps)
+#strace
+#nc (in nmap)
 
 #TODO: Add requirements to run this script, to above.  Extra credit: add how to install them if not obvious by its name.
 #TODO: Add more legacy Black Duck Suite (Protex, Code Center) specifics. 
@@ -53,11 +59,14 @@ echo
 echo
 
 #Is Protex host?
+unset ISPROTEX ; 
+ISPROTEX=$(ps auxww | grep -v grep | grep -i "protexip" | wc -l) 
+echo -n "Number of protex processes : $ISPROTEX : " 
+if [[ "$ISPROTEX" -gt "0" ]] ; then ISPROTEX=true ; else unset ISPROTEX ; fi ; 
+if [[ "$ISPROTEX" ]] ; then echo is protex ; else echo is not protex ; fi 
+
 ( unset ISPROTEX ; ISPROTEX=$(ps auxww | grep -v grep | grep -i "protexip" | wc -l) ; echo -n "Number of protex processes : $ISPROTEX : " ; if [[ "$ISPROTEX" -gt "0" ]] ; then ISPROTEX=true ; else unset ISPROTEX ; fi ; if [[ "$ISPROTEX" ]] ; then echo is protex ; else echo is not protex ; fi ) |& while read line ; do echo "$($LOGDATECMD):1L : is protex? : $line" ; done
 echo
-
-#Is postgresql host?
-( unset ISPOSTGRESQL ; ISPOSTGRESQL=$(ps auxww | grep -v grep | grep -i "postgresql.*-D.*data$" | wc -l) ; echo -n "Number of postgresql processes : $ISPOSTGRESQL : " ; if [[ "$ISPOSTGRESQL" -gt "0" ]] ; then ISPOSTGRESQL=true ; else unset ISPOSTGRESQL ; fi ; if [[ "$ISPOSTGRESQL" ]] ; then echo is postgresql ; else echo is not postgresql ; fi ) |& while read line ; do echo "$($LOGDATECMD):1L : is postgresql? : $line" ; done
 
 echo
 echo $($LOGDATECMD):1L : memory:
@@ -97,10 +106,6 @@ echo
 echo iotop:
 echo
 echo $($LOGDATECMD):1L : iotop : $(iotop -b -n1 -d5 | head -n 2)
-echo
-echo $($LOGDATECMD) : postgres ps : 
-echo
-ps auxww | grep -v grep | grep -e PID -e postgres | grep -v -e "idle$" -e "process\s*$" | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : postgres ps : $line" ; done
 echo
 echo $($LOGDATECMD) : java ps : 
 echo
@@ -253,20 +258,58 @@ fi # is docker
 
 
 #If is protex
-if [[ "$ISPROTEXIP" ]] ; then
+echo
+#echo $($LOGDATECMD) : is protex? : $ISPROTEX 
+if [[ "$ISPROTEX" ]] ; then
+  echo $($LOGDATECMD) : monitoring ProtexIP  
   echo
-  ps auxww | grep -v grep | grep -e PID -e proteix | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : protexip ps : $line" ; done
+  ps auxww | grep -v grep | grep -e PID -e protex | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : protexip ps : $line" ; done
   echo
-  PROTEXHOME=$(ps auxww | grep -i protexip | tr ' ' '\n' | grep homeURL | sed -re 's#^.*file://(.*$)#\1#g')
+  PROTEXHOME=$(ps auxww | grep -i protexip | tr ' ' '\n' | grep homeURL | sed -re 's#^.*file://(.*$)#\1#g')  # has trailing slash
+  #echo
+  #echo $($LOGDATECMD) : protex home : "${PROTEXHOME}"  # has trailing slash
+  #echo
   #tail protex logs
-  find "${PROTEXHOME}/tomcat/logs" -mmin -10  | xargs tail -v -n 100 | cut -c1-1000
+  find "${PROTEXHOME}tomcat/logs" -mmin -60  | xargs tail -v -n 100 | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : protexip logs : $line" ; done
+
+  #TODO: insert other protex-specifics commands here...
  
 fi
+echo
 
 
+#Is postgresql host?
+unset ISPOSTGRESQL ; 
+ISPOSTGRESQL=$(ps auxww | grep -v grep | grep -i "postgresql.*-D.*data$" | wc -l) ; 
+echo -n "Number of postgresql processes : $ISPOSTGRESQL : " ; 
+if [[ "$ISPOSTGRESQL" -gt "0" ]] ; then ISPOSTGRESQL=true ; echo is postgresql ; else unset ISPOSTGRESQL ; echo is not postgresql ; fi ; 
+if [[ "$ISPOSTGRESQL" ]] ; then echo is postgresql ; else echo is not postgresql ; fi 
+( unset ISPOSTGRESQL ; ISPOSTGRESQL=$(ps auxww | grep -v grep | grep -i "postgresql.*-D.*data$" | wc -l) ; echo -n "Number of postgresql processes : $ISPOSTGRESQL : " ; if [[ "$ISPOSTGRESQL" -gt "0" ]] ; then ISPOSTGRESQL=true ; else unset ISPOSTGRESQL ; fi ; if [[ "$ISPOSTGRESQL" ]] ; then echo is postgresql ; else echo is not postgresql ; fi ) |& while read line ; do echo "$($LOGDATECMD):1L : is postgresql? : $line" ; done
 #If is postgresql
 #get data dir:  ps auxww | grep "protexIP.*postgres.*\-D .*data$" | sed -re 's/^.* -D (.*\/data$).*/\1/g' -> /var/lib/bds-protexip/data
+  #2020-09-18T01:10:10.717407171Z : postgres ps : bds-pro+   1634  0.0  0.0 481828 31380 ?        S    Aug18   2:08 /opt/blackduck/protexIP/postgresql/bin/postmaster -D /var/lib/bds-protexip/data
+  #TODO: insert other protex-specifics commands here... and put in an if block
 
+if [[ "$ISPOSTGRESQL" ]] ; then
+  echo
+  echo $($LOGDATECMD) : monitoring postgres  
+  echo
+  echo $($LOGDATECMD) : postgres ps : 
+  echo
+  ps auxww | grep -v grep | grep -e PID -e postgres -e postmaster | grep -v -e "idle$" -e "process\s*$" | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : postgres ps : $line" ; done
+  echo
+  PGDATADIR="$(ps auxww | grep -v grep | grep "protexIP.*postgres.*\-D .*data$" | sed -re 's/^.* -D (.*\/data$).*/\1/g')"
+  echo $($LOGDATECMD) : postgres data dir : "${PGDATADIR}"
+  echo
+  echo $($LOGDATECMD) : postgres data dir : "${PGDATADIR}"
+  echo
+  #[pjalajas@sup-px05 ~]$ sudo find /var/lib/bds-protexip/data/pg_log -type f -mtime -1
+  #/var/lib/bds-protexip/data/pg_log/postgresql-2020-09-17_000000.log
+  find "${PGDATADIR}/pg_log" -mmin -60 -type f -ls |& while read line ; do echo "$($LOGDATECMD) : postgresql logs : $line" ; done 
+  echo
+  find "${PGDATADIR}/pg_log" -mmin -60 -type f | xargs tail -v -n 100 | cut -c1-1000 |& while read line ; do echo "$($LOGDATECMD) : postgresql logs : $line" ; done
+  echo
+fi
 
 
 
@@ -366,14 +409,15 @@ echo
 #done
 
 echo $($LOGDATECMD) : monitoring openssl
-for mopt in kb.blackducksoftware.com
+for mopt in kb.blackducksoftware.com updates.suite.blackducksoftware.com www.google.com
 do
   # echo -n | openssl s_client -connect kb.blackducksoftware.com:443 2>&1 | openssl x509 -text | grep -e Subject: -e Issuer: -e DNS
   #    Issuer: C=US, O=DigiCert Inc, CN=DigiCert SHA2 Secure Server CA
   #    Subject: C=US, ST=Massachusetts, L=Burlington, O=Black Duck Software, Inc., OU=IT, CN=*.blackducksoftware.com
   #            DNS:*.blackducksoftware.com, DNS:blackducksoftware.com
   echo $($LOGDATECMD) : monitoring host openssl $mopt
-  time (echo -n | openssl s_client -connect $mopt:443 2>&1 | openssl x509 -text | grep -e Subject: -e Issuer: -e DNS) |& while read line ; do echo "$($LOGDATECMD) : openssl $mopt : $line" ; done
+  #openssl x509 -fingerprint -text -noout 
+  time (echo -n | openssl s_client -connect $mopt:443 2>&1 | openssl x509 -fingerprint -text -noout | grep -e "Fingerprint" -e Subject: -e Issuer: -e DNS -e "Not ") |& while read line ; do echo "$($LOGDATECMD) : openssl $mopt : $line" ; done
   echo
 done
 echo
