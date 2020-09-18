@@ -2,9 +2,10 @@
 #SnpsSigSup_ServerMonitor.bash
 #DATE: 2019-06-06, 2020-08-27
 #AUTHOR: pjalajas@synopsys.com
+#SUPPORT:  https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009180147Z
-#GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # 3488697280 29538
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009180203Z
+#GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # 1476951358 29606
 #CHANGELOG: pj added some protex and postgres
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc. Primarily for new Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
