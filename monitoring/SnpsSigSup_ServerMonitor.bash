@@ -4,8 +4,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT:  https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009180203Z
-#GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # 1476951358 29606
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009181352Z
+#GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # ____
 #CHANGELOG: pj added some protex and postgres
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc. Primarily for new Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
@@ -25,6 +25,10 @@
 #strace
 #nc (in nmap)
 
+#TODO: Add grep /var/log/messages for docker, postgres, java, oom Killed, etc [pjalajas@sup-px05 ~]$ sudo grep -e docker -e java -e postgres -e error -e fatal -e fail -e sever /var/log/messages | tail | cut -c1-200
+#TODO: Add recommendations for better logging in docker, container, protex/tomcat, postgres (/var/lib/bds-protexip/data/postgresql.conf), codecenter/tomcat, java (ex ssl debug; jmx?) #        [pjalajas@sup-px05 ~]$ sudo find /opt/blackduck/ -type f -iname "*log*prop*" | grep -v -e tmp -e backup -e trial /opt/blackduck/protexIP/client-tomcat/conf/log4j.properties /opt/blackduck/protexIP/lib/jre/lib/logging.properties /opt/blackduck/protexIP/tomcat/lib/log4j.properties /opt/blackduck/protexIP/tomcat/lib/__MACOSX/._log4j.properties /opt/blackduck/protexIP/tomcat/conf/logging.properties.dist
+#TODO: logging levels: Standard log levels built-in to Log4J Standard Level	intLevel OFF 0       FATAL 100         ERROR 200         WARN 300      INFO 400      DEBUG 500      TRACE 600        ALL Integer.MAX_VALUE                  Add:  MaxBackupIndex and compression to limit log disk space usage.   Add: maybe set hourly rollover with FileNamePattern.
+ 
 #TODO: Add requirements to run this script, to above.  Extra credit: add how to install them if not obvious by its name.
 #TODO: Add more legacy Black Duck Suite (Protex, Code Center) specifics. 
 #TODO: Many in-container tests are dumb, they just report the os info.  Can probably remove some useless, redundant.  Move some of these to a one-time server checker, like SynopsysGatherServerSpecs_202007.bash.  (not too urgent, just some wasted bytes, I think)
