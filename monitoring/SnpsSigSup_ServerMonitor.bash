@@ -4,17 +4,22 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT:  https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009181522Z
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009222029Z
 #GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # ____
-#CHANGELOG: pj added some protex and postgres
+#CHANGELOG: 2009222029Z pj some comments
 
 #PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc. Primarily for new Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
 
+#USAGE: This script is intended to be started with a sleep loop before the server issue is expected to occur.  Not sure of best sleep duration; script itself takes 30 seconds or so. Ctrl+c to exit. 
 #USAGE: Check and resolve REQUIREMENTS, CONFIGS.  Run on each host (docker, protex, postgresql (e.g. if externaldb), codecenter (not yet implemented)).  
-#USAGE: mkdir -p log ; sudo bash -c 'export mlogtime=$(date +%Y%m%d%H%M%SZ%a) ; while true ; do ./SnpsSigSup_ServerMonitor.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigSup_ServerMonitor.bash_$(hostname -f)_${mlogtime}PJ.out.gz ; echo sleeping ; sleep 1s ; done' 
+#USAGE: The following are just examples or demonstrations or hints or thought-provokers--adjust, alter, implement as you see fit!  Ask for help.  Suggestions welcome!
+#USAGE: mkdir -p log ; sudo bash -c 'export mlogtime=$(date +%Y%m%d%H%M%SZ%a) ; while true ; do ./SnpsSigSup_ServerMonitor.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigSup_ServerMonitor.bash_$(hostname -f)_${mlogtime}PJ.out.gz ; echo sleeping ; sleep 5s ; done'  
 #USAGE: Check for errors, including missing requirements with like: scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo yum install iotop procps -y ; sudo ~/SnpsSigSup_ServerMonitor.bash >/dev/null"
 #USAGE: To run on remote host:  scp SnpsSigSup_ServerMonitor.bash sup-px05:~ ; ssh -tt sup-px05 "sudo -S yum --quiet install iotop procps strace nmap -y ; sudo ~/SnpsSigSup_ServerMonitor.bash " >& /tmp/out # type password in when not prompted (TODO! FIXME)
 
+#CONFIG
+# TODO:  get thses automatically via ps [pjalajas@sup-pjalajas-2 monitoring]$ ssh -t -t 10.1.65.25 ps auxwww 2>/dev/null | tr ' ' '\n' | grep -i -e home -e base # -Dblackduck.homeURL=file:///opt/blackduck/protexIP/ -Dblackduck.database.dataDir=/var/lib/bds-protexip/data -Dblackduck.baseURL=http://127.0.0.1:80/ -Dcatalina.base=/opt/blackduck/protexIP/tomcat -Dcatalina.home=/opt/blackduck/protexIP/tomcat 
+PROTEXDIR=/opt/blackduck/protexIP  
 
 #REQUIREMENTS: (find installation package name with something like: yum provides "*/<cmd name>")
 #These are more like suggestions as opposed to requirements; script will throw "ignorable" errors if these commands are not installed. 
@@ -50,8 +55,6 @@
 #This is really overkill in lots of ways, but trying to do it all in one shot.  Suggestions welcome.
 #Tries to prepend _every_ line with a good timestamp, for greppability and sorting.
 
-#CONFIG
-PROTEXDIR=/opt/blackduck/protexIP
 
 #INIT
 
