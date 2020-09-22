@@ -4,13 +4,13 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT:  https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009222029Z
+#VERSION: :r ! date --utc +\%y\%m\%d\%H\%MZ # 2009222033Z
 #GREPVCKSUM: :r ! grep -v grepvcksum SnpsSigSup_ServerMonitor.bash | cksum # ____
 #CHANGELOG: 2009222029Z pj some comments
 
-#PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state when a server crashes, etc. Primarily for new Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
+#PURPOSE:  A work in progress! Corrections, suggestions welcome. Intended to try to capture system state, resource exhaustion, etc, when a server/container/application crashes, etc. Primarily for new Synopsys Black Duck (Hub), but also for legacy Suite (Protex, and later Code Center). 
 
-#USAGE: This script is intended to be started with a sleep loop before the server issue is expected to occur.  Not sure of best sleep duration; script itself takes 30 seconds or so. Ctrl+c to exit. 
+#USAGE: This script is intended to be started with a sleep loop before the server issue is expected to occur.  Not sure of best sleep duration; script itself takes 30 seconds or so. Ctrl+c to exit after issue occurs. 
 #USAGE: Check and resolve REQUIREMENTS, CONFIGS.  Run on each host (docker, protex, postgresql (e.g. if externaldb), codecenter (not yet implemented)).  
 #USAGE: The following are just examples or demonstrations or hints or thought-provokers--adjust, alter, implement as you see fit!  Ask for help.  Suggestions welcome!
 #USAGE: mkdir -p log ; sudo bash -c 'export mlogtime=$(date +%Y%m%d%H%M%SZ%a) ; while true ; do ./SnpsSigSup_ServerMonitor.bash |& tee /dev/tty |& gzip -9 >> ./log/SnpsSigSup_ServerMonitor.bash_$(hostname -f)_${mlogtime}PJ.out.gz ; echo sleeping ; sleep 5s ; done'  
