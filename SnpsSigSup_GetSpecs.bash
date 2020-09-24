@@ -2,8 +2,8 @@
 #SCRIPT: SnpsSigSup_GetSpecs.bash
 #AUTHOR: pjalajas@synopsys.com
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2009061338Z # pj updating 
-#GREPVCKSUM:  TODO
+#VERSION: 2009242105Z
+#GREPVCKSUM:  1491746125 9609
 
 #PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
