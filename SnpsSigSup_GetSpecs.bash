@@ -1,9 +1,10 @@
 #!/usr/bin/bash
 #SCRIPT: SnpsSigSup_GetSpecs.bash
 #AUTHOR: pjalajas@synopsys.com
+#SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2009242110Z
-#GREPVCKSUM:  300145939 9623
+#VERSION: 2009281623Z
+#GREPVCKSUM:  3468261141 10197
 
 #PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
@@ -17,7 +18,10 @@ usage() {
     --debug -d debug mode (set -x)
     Needs lots of work.  A proof of concept.  Suggestions welcome. 
     Edit CONFIGs, then:
-    sudo ./SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_$(hostname -f).out.gz 
+    sudo ./SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f).out.gz 
+    or, like:
+    sudo ./SnpsSigSup_GetSpecs.bash |& tee /dev/tty |& gzip -9 > ./log/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f).out.gz
+
     Takes a minute or so to run.
     Run zgrep "not found" \$(ls -1rt /tmp/SnpsSigSup_GetSpecs.bash*gz | tail -n 1) to find any missing commands you may wish to install.
 USAGEEOF
@@ -135,9 +139,13 @@ echo -e postgresql : "\n$(psql --version)"
 echo
 echo -e nproc : "\n$(nproc)"
 echo
+echo -e cpuinfo summary : "\n$(grep -i -e cache -e bogomips -e model\ name /proc/cpuinfo | sort -u)"
+echo
 #echo -e free -galt : "\n$(free -galt)"
 #echo
 echo -e free -glt : "\n$(free -glt)"
+echo
+echo -e MemTotal /proc/meminfo : "\n$(grep MemTotal /proc/meminfo)"
 echo
 echo -e ulimit -a : "\n$(ulimit -a)" # TODO get same info for our app user (instead of sudo/root)
 
@@ -202,7 +210,8 @@ echo -e lspci : "\n$(lspci -nn)"
 echo
 echo -e lscpu : "\n$(lscpu)"
 echo
-echo -e lsblk : "\n$(lsblk)"
+#echo -e lsblk : "\n$(lsblk)"
+echo -e lsblk : "\n$(lsblk --fs --topology)"
 echo
 echo -e lsblk rota: "\n$(lsblk -d -o name,rota)"
 echo
@@ -273,8 +282,8 @@ echo jstat needs to run as java user, sudo -u root \<this script\>...
 #fi ; 
 #done 
 echo
-find /proc -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000
-find /sys  -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000 
+#TODO too much info; maybe just do for PIDs of our major components: find /proc -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000
+#TODO hangs: find /sys  -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000 
 echo
 
 echo
