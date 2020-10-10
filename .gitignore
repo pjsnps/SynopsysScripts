@@ -1,0 +1,9 @@
+**/*.~[0-9]~
+**/*.~[0-9][0-9]~
+**/log/*
+**/test/*
+**/jsjam2/1j01
+**/jsjam2/ai
+**/jsjam2/antvis
+**/jsjam2/521dimensions
+**/jsjam2/github.com
