@@ -14,13 +14,13 @@ Repeat similar on source code tree and grep kb .gz file(s) for matches.
 
 Example KB file contents, kb_1024.out.gz:
 
->/bin/lslogins : 2041218741 1024
->/bin/dpkg-scansources : 1071909643 1024
->/bin/fc-cat : 696955885 1024
->/bin/qemu-system-i386 : 3138043667 1024
->/bin/mergecap : 1418748294 1024
->/bin/qemu-sparc64 : 999254692 1024
->/bin/base64 : 2725394728 1024
+`/bin/lslogins : 2041218741 1024
+/bin/dpkg-scansources : 1071909643 1024
+/bin/fc-cat : 696955885 1024
+/bin/qemu-system-i386 : 3138043667 1024
+/bin/mergecap : 1418748294 1024
+/bin/qemu-sparc64 : 999254692 1024
+/bin/base64 : 2725394728 1024`
 
 TODO:  test maybe:  
 
