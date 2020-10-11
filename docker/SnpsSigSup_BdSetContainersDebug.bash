@@ -9,7 +9,7 @@
 
 #PURPOSE:  Push rootLogger.level=all into all applicable containers log4j2.properties files.  Especially useful for troubleshooting especially odd Black Duck (Hub) docker swarm startup issues.
 
-#NOTES:  Suggestions welcome.  See REFERENCE below for background, ideas.  Indempotent; put in tight while loop to add debug logging to quickly failing containers. 
+#NOTES:  Suggestions welcome.  See REFERENCE below for background, ideas.  Idempotent; put in tight while loop to add debug logging to quickly failing containers. 
 
 #USAGE:  Intends to be like a single-purpose linux utiltity.  Edit commands as you wish, of course.  
 #USAGE:  Primary use-case:    while true ; do . ./SnpsSigSup_BdSetContainersDebug.bash info all ; done
