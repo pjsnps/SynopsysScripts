@@ -19,7 +19,7 @@
 
 #CONFIG
 
-#TODO: add instruction to copy to SSH="ssh -t sup-pjalajas-2"  # to pull from remote Black Duck server; workaround for now: copy this script to remote /tmp then run over ssh
+#TODO: add instruction to copy to SSH="ssh -t sup-pjalajas-2"  #  workaround for now: copy this script to remote /tmp then run over ssh
 
 
 #MAIN
