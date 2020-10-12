@@ -23,16 +23,18 @@ case $1 in
     while true ; do 
       docker ps -q | while read mcontainerid ; do
           mcontainername=$(docker ps |& grep $mcontainerid | cut -d- -f2 | cut -d: -f1)
-          echo -n $mcontainername \| $mcontainerid \|\  ; 
-          docker container logs $mcontainerid |& tail -n 1 ; 
+          mcontainerhealth=$(docker ps | grep $mcontainerid | cut -d\( -f2 | cut -d: -f2 | cut -d\) -f1 | tr -d ' ')
+          echo -n $mcontainername \| $mcontainerid \|\  $mcontainerhealth \|\  ; 
+          docker container logs $mcontainerid |& cat | tail -n 1 ; 
       done | column -t -s\| -o '  '
-      echo  
+      echo  # a little space between loops
       #sleep 2s  
     done 
   ;;
   2)
-   echo "full logs from all recently Exited containers"
-   docker ps -a | grep Exited | head | while read mdockerpsaout ; do mcontainerid=$(echo "$mdockerpsaout" | cut -d' ' -f1) ; echo $mcontainerid ; docker container logs $mcontainerid |& cat ; done
+   echo "Printing full container logs from all recently Exited containers."
+   echo "Consider running SnpsSigSup_BdSetContainersDebug.bash in a tight loop in another shell to force some containers into debug mode before they quickly exit."
+   docker ps -a | grep Exited | head | while read mdockerpsaout ; do echo $mdockerpsaout ;  mcontainerid=$(echo "$mdockerpsaout" | cut -d' ' -f1) ; echo $mcontainerid ; docker container logs $mcontainerid |& cat ; echo ; done
    ;;
 
 esac
