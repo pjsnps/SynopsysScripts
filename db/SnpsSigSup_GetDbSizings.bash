@@ -48,11 +48,11 @@ echo "du data/base :"
 du -sh $DATABASEDIR ; 
 
 echo
-psql -h $PGHOST -U postgres -d bds_hub -c "
+psql -qAt -h $PGHOST -U postgres -d bds_hub -c "
   SELECT version() 
 ; " ; 
 
-#echo # not needed
+echo
 echo Black Duck Version: $(curl -k -s -L https://${BDHOST}/api/current-version | jq -r .version )
 
 echo
