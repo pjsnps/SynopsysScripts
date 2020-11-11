@@ -3,7 +3,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011110333Z
+#VERSION: 2011110516Z
 #GREPVCKSUM: TODO 
 
 #PURPOSE: To download open source project files for various Synopsys testing purposes.
@@ -106,29 +106,43 @@ echo
 #https://github.com/search?o=desc&p=100&q=build.gradle&s=forks&type=Repositories
 
 #mpage is the number of pages of the github repo listings that are parsed for projects from which to download archives. 
-for mpage in {1..5} ; do 
+#for mpage in {1..1} ; do 
+
   #works: wget --quiet --output-document=- "https://github.com/search?o=desc&p=${mpage}&q=build.gradle&s=forks&type=Repositories" | tr ';"&' '\n' | grep "https://github.com/.*/.*" | grep -v -e "github.com/notifications/" -e "github.com/search/" -e "github.com/site/"
   #  outputs rows like:  https://github.com/spring-guides/gs-gradle
   #Most STARS:  https://github.com/search?o=desc&q=build.gradle&s=stars&type=Repositories
   #Most FORKS:  wget --quiet --output-document=- "https://github.com/search?o=desc&p=${mpage}&q=build.gradle&s=forks&type=Repositories" | \
-  wget --quiet --output-document=- "https://github.com/search?o=desc&p=${mpage}&q=build.gradle&s=stars&type=Repositories" | \
-    tr ';"&' '\n' | \
-    grep "https://github.com/.*/.*" | \
-    grep -v -e "github.com/notifications/" -e "github.com/search/" -e "github.com/site/" | \
-  head -n 1000 | \
-  while read mprojpage
+  #https://github.com/topics/maven?o=desc&s=stars
+  #wget --quiet --output-document=- "https://github.com/search?o=desc&p=${mpage}&q=build.gradle&s=stars&type=Repositories" | \
+  #wget --quiet --output-document=- "https://github.com/topics/maven?o=desc&s=stars" #| \
+    #tr ';"&' '\n' | \
+    #grep "https://github.com/.*/.*" | \
+    #grep -v -e "github.com/notifications/" -e "github.com/search/" -e "github.com/site/" | \
+  #wget --quiet --output-document=- "https://github.com/topics/maven?o=desc&s=stars" | tr ' ' '\n' | grep -v -e /stargazers -e /issues -e /pulls -e /login -e /contribute -e /topics | grep href | sort -u | cut -d \= -f 2 | tr -d '"' 
+#[pjalajas@sup-pjalajas-hub test]$ wget --quiet --output-document=- "https://github.com/topics/maven?o=desc&s=stars" | grep REPOSITORY_CARD | tr ' ' '\n' | grep href.*stargazers | sed -re 's#href="##g' -e 's#/stargazers"##g'
+#/GoogleContainerTools/jib
+#for mpkgmgr in gradle maven npm nuget go
+for mpkgmgr in BITBAKE CARGO COCOAPODS CONDA CPAN CRAN GIT GO_MOD GO_DEP GO_VNDR GO_VENDOR GO_GRADLE GRADLE HEX LERNA MAVEN NPM NUGET PACKAGIST PEAR PIP RUBYGEMS SBT SWIFT YARN CLANG
+do
+  echo downloading $mpkgmgr project release .gz archives
+  wget --quiet --output-document=- "https://github.com/topics/${mpkgmgr}?o=desc&s=stars" | grep REPOSITORY_CARD | tr ' ' '\n' | grep href.*stargazers | sed -re 's#href="##g' -e 's#/stargazers"##g' | \
+  head -n 200 | \
+  while read mprojdir
   do
-    echo downloading archives from "${mprojpage}" # like https://github.com/spring-guides/gs-gradle
-    mprojdir="$(echo ${mprojpage} | sed -re 's#https://##g')"
     echo mprojdir = $mprojdir
+    echo downloading archives from "https://github.com${mprojdir}" # like https://github.com/spring-guides/gs-gradle
+    #mprojdir="$(echo ${mprojpage} | sed -re 's#https://##g')"
+    #echo mprojdir = $mprojdir
     #TODO:  wrap this block to download more pages of releases for each project
-    wget --quiet --output-document=- "${mprojpage}/releases" | \
+    #wget --quiet --output-document=- "${mprojpage}/releases" | \
+    wget --quiet --output-document=- "https://github.com${mprojdir}/releases" | \
       tr ';"&=' '\n' | grep -e "^/" | grep -e "only need one type of archive, dont need .zip" -e "\.gz" | \
     while read marchive ; do
+      echo downloading $marchive...
       #https://github.com/spring-guides/gs-gradle/archive/2.1.6.RELEASE.zip
       #       --directory-prefix=prefix
       # wget --no-verbose --no-clobber --progress=dot:mega --directory-prefix="./pkgmgrs/${mprojdir}" "https://github.com/${marchive}"
-      wget --no-verbose --no-clobber --progress=dot --directory-prefix="./pkgmgrs/${mprojdir}" "https://github.com/${marchive}"
+      wget --no-verbose --no-clobber --progress=dot --directory-prefix="./pkgmgrs/github.com/${mpkgmgr}${mprojdir}" "https://github.com/${marchive}"
     done
     echo
   done
