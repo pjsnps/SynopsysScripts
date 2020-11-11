@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ Software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2010141046Z
+#VERSION: 2010310027Z
 #GREPVCKSUM: TODO 
 
 #PURPOSE: Provides different ways to view container logs 
@@ -38,5 +38,8 @@ case $1 in
    echo "Consider running SnpsSigSup_BdSetContainersDebug.bash in a tight loop in another shell to force some containers into debug mode before they quickly exit."
    docker ps -a | grep Exited | head | while read mdockerpsaout ; do echo $mdockerpsaout ;  mcontainerid=$(echo "$mdockerpsaout" | cut -d' ' -f1) ; echo $mcontainerid ; docker container logs $mcontainerid |& cat ; echo ; done
    ;;
+  *)
+   echo "Need a parameter.  See USAGE."
+  ;;
 
 esac
