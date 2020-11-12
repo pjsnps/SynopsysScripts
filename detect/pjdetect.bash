@@ -1,11 +1,14 @@
-#!/bin/bash
+#!/usr/bin/bash
 #NAME: pjdetect.bash
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2019-09-19
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011121413Z
+#VERSION: 2011121415Z
 
-#PURPOSE To make test scanning with Detect easier. Corrections, suggestions welcome, please!
+#PURPOSE: To make test scanning with Detect easier. 
+
+#NOTES: Sorry it's so messy; it's in heavy use and modification all day every day.  
+#NOTES: Corrections, suggestions welcome, please!
 
 #USAGE: Edit lots below, then:
 
@@ -25,8 +28,8 @@
 
 #NOTES:
 
-#Ignores are complicated:
-# Madhusudan Gopanna  5:45 PM 2020-04-27 slack
+#Ignores are complicated, and somewhat broken:
+# Madhu 2020-04-27 slack
 #SEE: https://jira-sig.internal.synopsys.com/browse/HUB-23741
   #Not sure about relative paths for <path> below (may be from command line dir, or from java home, or other; test to confirm), but absolute paths for <path> are definitely OK. 
   #Not sure about trailing slashes for <path>. 
