@@ -2,7 +2,7 @@
 #SCRIPT: SnpsSigSup_RecursiveExpander.bash
 #AUTHOR: pjalajas@blackducksoftware.com, pjalajas@synopsys.com
 #DATE: 2016-02-12, 2020-10-23, 2020-11-11
-#VERSION:  2011120538Z
+#VERSION:  2011120541Z
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT:  https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
 
@@ -38,6 +38,7 @@ if [[ "$(bunzip2 --version |& grep "^bzip2" >& /dev/null ; echo $?)" != "0" ]] ;
 fi
 #TODO:  unzip --version |& grep "^UnZip" 
 #TODO:  tar
+#TODO: gunzip
 
 
 #SUPPORTED EXTENSIONS
@@ -105,7 +106,7 @@ function f_main {
         touch "/tmp/SnpsSigSup_RecursiveExpander.bash.mexpanded"
         ;;
        gzip)
-        #all file types that can be expanded with "bunzip2".
+        #all file types that can be expanded with "gunzip".
         #TODO this may not work properly. Does it expand the file in place?  Is that OK? 
         mexpanded_dir="$(f_mexpand_dir $mfullfile)"
         gunzip "${mfullfile}" 2> /dev/null
