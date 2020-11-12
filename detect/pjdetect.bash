@@ -1,0 +1,1 @@
+/home/pjalajas/dev/hub/test/pjdetect.bash
