@@ -3,73 +3,29 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2019-09-19
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011121252Z add SnpsSigSup_RecursiveExpander.bash
+#VERSION: 2011121413Z
 
-#A work in progress, to make test scanning with Detect easier.
+#PURPOSE To make test scanning with Detect easier. Corrections, suggestions welcome, please!
 
 #USAGE: Edit lots below, then:
-#USAGE: /home/pjalajas/Documents/dev/hub/test/pjdetect.bash |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log
-#USAGE: sudo for docker local tar scan:  [pjalajas@sup-pjalajas-hub projects]$ sudo /home/pjalajas/Documents/dev/customers/customer/pjdetect.bash |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log
 
-#USAGE: to scan a large list of directories as separate projects: [pjalajas@sup-pjalajas-hub test]$ find pkgmgrs/github.com/ -mindepth 3 -type d | sort -R | while read mprojdir ; do echo ; echo scanning $mprojdir ; /home/pjalajas/Documents/dev/hub/test/pjdetect.bash "${mprojdir}" |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done ; echo ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log   
+#USAGE: basic:  bash pjdetect.bash <source dir> <expand>
+
+#USAGE: /home/pjalajas/Documents/dev/hub/test/pjdetect.bash |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log
+#USAGE: sudo for docker local tar scan:  sudo /home/pjalajas/Documents/dev/customers/customer/pjdetect.bash |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log
+
+#USAGE: to scan large number of dirs with new SnpsSigSup_RecursiveExpander.bash:  find pkgmgrs/github.com/ -maxdepth 3 -type d | sort -R | head -n 1 | while read mprojdir ; do echo ; date ; date --utc ; echo scanning "${mprojdir}" with detect ; time /home/pjalajas/Documents/dev/hub/test/pjdetect.bash "${mprojdir}" expand |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done ; echo done scanning "$mprojdir" with detect ; date ; date --utc ; echo ; echo sleeping 10s ; sleep 10s ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log 
 
 #CONFIG
 
 #export SPRING_APPLICATION_JSON='{"blackduck.url":"https://127.0.0.1:443","blackduck.api.token":"ZTAxYjg2YjYtMDZhOC00M2VmLThmYmUtMzUxOTJlZjZkZDdkOjU3YjA0ZDIwLWMzN2YtNDE3YS04ZTE0LTJiNDM2MjAxM2JjZA=="}'
 
 #WARNING: may need to escape spaces in some properties. 
-#echo Contents of ignore file:
-#cat $HOME/config/blackduck/ignore
-#echo '
-#...
-#./war/node_modules/syntax-error/readme.markdown
-#./war/node_modules/syntax-error/index.js
-#./war/node_modules/syntax-error/LICENSE
-#./war/node_modules/syntax-error/package.json
-#./war/node_modules/syntax-error/node_modules
-#./war/node_modules/syntax-error/node_modules/.bin
-#./war/node_modules/syntax-error/node_modules/.bin/acorn
-#...
-#'
-#
-#[proxy]
-#--blackduck.proxy.host                                                           Hostname for proxy server.                                                                     
-#--blackduck.proxy.ignored.hosts                                                  A comma separated list of regular expression host patterns that should not use the proxy.      
-#--blackduck.proxy.ntlm.domain                                                    NTLM Proxy domain.                                                                             
-#--blackduck.proxy.ntlm.workstation                                               NTLM Proxy workstation.                                                                        
-#--blackduck.proxy.password                                                       Proxy password.                                                                                
-#--blackduck.proxy.port                                                           Proxy port.                                                                                    
-#--blackduck.proxy.username                                                       Proxy username. 
+#TODO: echo Contents of ignore file:
 
-#bash <(curl --trace-ascii -s -L https://detect.synopsys.com/detect.sh) \
-#[pjalajas@sup-pjalajas-hub 00770013_443Error]$ du -sh /home/pjalajas/Documents/dev/hub/test/projects/* | sort -k1h
-#8.0K    /home/pjalajas/Documents/dev/hub/test/projects/detect.sh
-#8.0K    /home/pjalajas/Documents/dev/hub/test/projects/detect.sh.asc
-#76K     /home/pjalajas/Documents/dev/hub/test/projects/semantic-release-config-1.0.0
-#100K    /home/pjalajas/Documents/dev/hub/test/projects/tinyproxy
-#124K    /home/pjalajas/Documents/dev/hub/test/projects/index.html
-#124K    /home/pjalajas/Documents/dev/hub/test/projects/index.html.1
-#472K    /home/pjalajas/Documents/dev/hub/test/projects/datastore_slorider
-#488K    /home/pjalajas/Documents/dev/hub/test/projects/pyriscope
-#1.2M    /home/pjalajas/Documents/dev/hub/test/projects/phproxyimproved
-#3.9M    /home/pjalajas/Documents/dev/hub/test/projects/netty-all-4.1.42.Final
-#4.6M    /home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164
-#5.0M    /home/pjalajas/Documents/dev/hub/test/projects/libxml2-2.9.8
-#8.0M    /home/pjalajas/Documents/dev/hub/test/projects/openssl
-#111M    /home/pjalajas/Documents/dev/hub/test/projects/signal-android
-#126M    /home/pjalajas/Documents/dev/hub/test/projects/docker_prometheus_v2.14.0
-#129M    /home/pjalajas/Documents/dev/hub/test/projects/react-ace
-#144M    /home/pjalajas/Documents/dev/hub/test/projects/synopsys-detect
-#276M    /home/pjalajas/Documents/dev/hub/test/projects/synopsys-detect_HEAD
-#309M    /home/pjalajas/Documents/dev/hub/test/projects/jenkins_stable-2.107
-#547M    /home/pjalajas/Documents/dev/hub/test/projects/jenkins_stable-2.107_expanded
-#7.0G    /home/pjalajas/Documents/dev/hub/test/projects/doab
-#7.0G    /home/pjalajas/Documents/dev/hub/test/projects/moab
-#bash <(curl --trace-ascii -k -s -L https://detect.synopsys.com/detect.sh) \
-#fails: bash <(curl --trace-ascii -k -s -L https://detect.synopsys.com/detect.sh) \
-#works java -jar synopsys-detect-6.1.0.jar \
+#NOTES:
 
-
+#Ignores are complicated:
 # Madhusudan Gopanna  5:45 PM 2020-04-27 slack
 #SEE: https://jira-sig.internal.synopsys.com/browse/HUB-23741
   #Not sure about relative paths for <path> below (may be from command line dir, or from java home, or other; test to confirm), but absolute paths for <path> are definitely OK. 
@@ -79,7 +35,6 @@
   #This works:  export JAVA_TOOL_OPTIONS=" -Dblackduck.scan.excludesFile=<path>/<file> " # ignore file can be anywhere, any name
   #This works: --detect.blackduck.signature.scanner.arguments="\ --exclude-from=<path>/<file>\ "  # ignore file can be anywhere, any name
 #Lines in ignore file must have path from source root down to ignored directory, may have multiple subdirs, and must be wrapped in '/': CLI_Output.txt:DEBUG: Adding exclude pattern: '/ignoreme/tobeignored/'
-
 #1. blackduck.scan.excludesFile = <any path>/ignore
 #2. XDG_CONFIG_HOME = <some path>/.config   and $XDG_CONFIG_HOME/blackduck/ignore
 #3. user.home = <some path> and $user.home/.config/blackduck/ignore
@@ -126,6 +81,10 @@ vmstat -w
 #netstat -s
 ####cat /proc/net/snmp
 
+
+
+#SOURCE PATH SELECTION:
+
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/pyriscope"   # customer problem/test project
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/plaban"   # pip requirements.txt file only
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/acegisecurity-1.0.7"  # customer 4 vs 5 report api 
@@ -156,21 +115,29 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00816607"
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, jars only, see also jsjam for huge javascript project #7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
-DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/jsjam20"  # huge, jars only, see also jsjam for huge javascript project #7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
 
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
 DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the one above (command line option takes precedence).
-echo Printing some of source tree... 
+echo Printing some of source tree to compare apples... 
 find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
-#OPTION:  run Recursive Expander because PkgMgr scans do not open archives. 
+
+
+
+#EXPAND: 
+
 #OPTION:  run Recursive Expander because PkgMgr scans do not open archives. 
 RECURSIVEEXPANDCMD="/home/pjalajas/dev/git/SynopsysScripts/util/SnpsSigSup_RecursiveExpander.bash"
 if [[ "$2" == "expand" ]] ; then 
-  bash /home/pjalajas/dev/git/SynopsysScripts/util/SnpsSigSup_RecursiveExpander.bash "${DETECTSOURCEPATHMOD}" |& cat
-  wait
+  bash ${RECURSIVEEXPANDCMD} "${DETECTSOURCEPATHMOD}" |& cat
+  wait # wait for all multi-threaded expansions to finish
   echo Printing some of source tree after expanding... 
   find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
 fi
+
+
+
+#MAIN COMMAND, but EDIT _many_ of these options as needed for your testing.  See messy bone yard below for command line switches.
+
 bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.url='https://sup-pjalajas-hub.dc1.lan' \
     --blackduck.trust.cert='true' \
@@ -211,8 +178,8 @@ pj_clone PVN_1106161352Z
 
 
 
-Try to "exclude" or ignore a single file by hiding it:
-[pjalajas@sup-pjalajas-hub test]$ mv projects/bcprov-jdk15on-164/ignoreme.commons-lang-2.6.jar projects/bcprov-jdk15on-164/ignoreme/commons-lang-2.6.jar                                                                                                                                                                                                                                                             
+Try to "exclude" or ignore a single file by hiding it (success: change owner/perms so detect cannot open it):
+[pjalajas@sup-pjalajas-hub test]$ mv projects/bcprov-jdk15on-164/ignoreme.commons-lang-2.6.jar projects/bcprov-jdk15on-164/ignoreme/commons-lang-2.6.jar
 [pjalajas@sup-pjalajas-hub test]$ find projects/bcprov-jdk15on-164/ -name "*commons-lang-2.6*" | parallel echo
 projects/bcprov-jdk15on-164/ignoreme/commons-lang-2.6.jar
 [pjalajas@sup-pjalajas-hub test]$ find projects/bcprov-jdk15on-164/ -name commons-lang-2.6.jar | parallel mv {} {//}/.{/}
