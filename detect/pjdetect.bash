@@ -131,10 +131,15 @@ find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100
 #OPTION:  run Recursive Expander because PkgMgr scans do not open archives. 
 RECURSIVEEXPANDCMD="/home/pjalajas/dev/git/SynopsysScripts/util/SnpsSigSup_RecursiveExpander.bash"
 if [[ "$2" == "expand" ]] ; then 
-  bash ${RECURSIVEEXPANDCMD} "${DETECTSOURCEPATHMOD}" |& cat
-  wait # wait for all multi-threaded expansions to finish
+  echo
+  echo Running $RECURSIVEEXPANDCMD...
+  bash ${RECURSIVEEXPANDCMD} "${DETECTSOURCEPATHMOD}" && wait # wait for all multi-threaded expansions to finish
+  echo
   echo Printing some of source tree after expanding... 
   find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
+  echo
+  echo Done running $RECURSIVEEXPANDCMD.
+  echo
 fi
 
 
