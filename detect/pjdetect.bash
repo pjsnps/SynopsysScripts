@@ -1,9 +1,10 @@
 #!/usr/bin/bash
 #NAME: pjdetect.bash
 #AUTHOR: pjalajas@synopsys.com
-#DATE: 2019-09-19
+#DATE: 2019-09-19, 2020-11-14
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011121415Z
+#VERSION: 2011142057Z
+#SUPPORT: TODO
 
 #PURPOSE: To make test scanning with Detect easier. 
 
@@ -17,7 +18,7 @@
 #USAGE: /home/pjalajas/Documents/dev/hub/test/pjdetect.bash |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log
 #USAGE: sudo for docker local tar scan:  sudo /home/pjalajas/Documents/dev/customers/customer/pjdetect.bash |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log
 
-#USAGE: to scan large number of dirs with new SnpsSigSup_RecursiveExpander.bash:  find pkgmgrs/github.com/ -maxdepth 3 -type d | sort -R | head -n 1 | while read mprojdir ; do echo ; date ; date --utc ; echo scanning "${mprojdir}" with detect ; time /home/pjalajas/Documents/dev/hub/test/pjdetect.bash "${mprojdir}" expand |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done ; echo done scanning "$mprojdir" with detect ; date ; date --utc ; echo ; echo sleeping 10s ; sleep 10s ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log 
+#USAGE: DOES NOT WORK YET:  to scan large number of dirs with new SnpsSigSup_RecursiveExpander.bash:  find pkgmgrs/github.com/ -maxdepth 3 -type d | sort -R | head -n 1 | while read mprojdir ; do echo ; date ; date --utc ; echo scanning "${mprojdir}" with detect ; time /home/pjalajas/Documents/dev/hub/test/pjdetect.bash "${mprojdir}" expand |& while read line ; do echo "$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ) $line" ; done ; echo done scanning "$mprojdir" with detect ; date ; date --utc ; echo ; echo sleeping 10s ; sleep 10s ; done |& tee -a /home/pjalajas/log/pjdetect.bash_$(hostname)_$(date +%Y%m%d_%H%M%S%Z%a)PJ.log 
 
 #CONFIG
 
@@ -119,6 +120,19 @@ DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00816607"
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, jars only, see also jsjam for huge javascript project #7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
 
+#parallel du -sh "{}" ::: ls projects/multiexpanded/* | sort -k1hr | head
+#27G     projects/multiexpanded/tomtiger27
+#9.9G    projects/multiexpanded/tomtiger10
+#8.8G    projects/multiexpanded/moab_jars9
+#8.1G    projects/multiexpanded/steelstruts
+#8.1G    projects/multiexpanded/steelstruts8
+#8.0G    projects/multiexpanded/tomtiger8
+#5.6G    projects/multiexpanded/monkeyfist5
+#5.1G    projects/multiexpanded/steelstruts5
+#5.1G    projects/multiexpanded/tomtiger5
+
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/multiexpanded/tomtiger5" 
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/" # expanded, 6.7 GB, 21 versions, 497,293 files       [pjalajas@sup-pjalajas-hub test]$ du -sh /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ 6.7G    /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -maxdepth 1 -type d -iname "*.exp" | wc -l 21 [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -type f | wc -l 497293
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
 DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the one above (command line option takes precedence).
 echo Printing some of source tree to compare apples... 
@@ -127,20 +141,20 @@ find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100
 
 
 #EXPAND: 
-
+#TODO:  this doesn't work yet, path names getting mangled by gnu parallel? 
 #OPTION:  run Recursive Expander because PkgMgr scans do not open archives. 
-RECURSIVEEXPANDCMD="/home/pjalajas/dev/git/SynopsysScripts/util/SnpsSigSup_RecursiveExpander.bash"
-if [[ "$2" == "expand" ]] ; then 
-  echo
-  echo Running $RECURSIVEEXPANDCMD...
-  bash ${RECURSIVEEXPANDCMD} "${DETECTSOURCEPATHMOD}" && wait # wait for all multi-threaded expansions to finish
-  echo
-  echo Printing some of source tree after expanding... 
-  find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
-  echo
-  echo Done running $RECURSIVEEXPANDCMD.
-  echo
-fi
+#RECURSIVEEXPANDCMD="/home/pjalajas/dev/git/SynopsysScripts/util/SnpsSigSup_RecursiveExpander.bash"
+#if [[ "$2" == "expand" ]] ; then 
+  #echo
+  #echo Running $RECURSIVEEXPANDCMD...
+  #bash ${RECURSIVEEXPANDCMD} "${DETECTSOURCEPATHMOD}" && wait # wait for all multi-threaded expansions to finish
+  #echo
+  #echo Printing some of source tree after expanding... 
+  #find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
+  #echo
+  #echo Done running $RECURSIVEEXPANDCMD.
+  #echo
+#fi
 
 
 
@@ -163,7 +177,6 @@ bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.offline.mode='false' \
     --detect.blackduck.signature.scanner.dry.run='false' \
 \
-    --detect.tools.excluded=SIGNATURE_SCAN \
     --detect.detector.search.depth=200 \
     --detect.detector.search.continue=true \
 \
@@ -174,6 +187,7 @@ exit # NOTE: keep at least one blank line above this exit command.
 #REFERENCE
 : '
 
+    --detect.tools.excluded=SIGNATURE_SCAN \
 pj_clone PVN_1106161352Z
     --logging.level.detect='TRACE' \
     --detect.project.name="005752ZTue" \
