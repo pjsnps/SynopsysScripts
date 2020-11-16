@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2010301953Z
+#VERSION: 2011151754Z
 #GREPVCKSUM: TODO 
 
 #PURPOSE: Try to give some details on the size of the Synopsys Black Duck (Hub) database, including db size, largest table sizes, counts of projects, scans, components, ec. 
@@ -16,16 +16,19 @@
 #CONFIG
 BDHOST=sup-pjalajas-2.dc1.lan
 PGHOST="${BDHOST}"
-DATABASEDIR=/var/lib/pgsql/9.6/data/base # no trailing slash
+PGHOST="pjalajas-blackduck-2020-10-0c.cyabejla8bjm.us-east-1.rds.amazonaws.com"
+PGUSER="blackduck"
+#TODO:  mod db dir commands for aws rds
+#DATABASEDIR=/var/lib/pgsql/9.6/data/base # no trailing slash
 
 #TODO:
 #TODO: add instruction to copy to SSH="ssh -t sup-pjalajas-2"  # to pull from remote Black Duck server; workaround for now: copy this script to remote /tmp then run over ssh
-#TODO: make sure we are getting the data from the correct host (script, bd, pg)...until then, just run it on the pg host.
+#TODO: make sure we are getting the data from the correct host (script, bd, pg)...until then, just run it on the bd or pg host.
 
 #MAIN
 
 echo
-echo "$(date) : $(date --utc) : SCRIPT HOST : $(hostname -f) :: BDHOST : ${BDHOST} : PGHOST : ${PGHOST}"
+echo -e "$(date) : $(date --utc) \nSCRIPT HOST : $(hostname -f)     ::     BDHOST : ${BDHOST}     ::     PGHOST : ${PGHOST}"
 #echo "nproc : $(nproc) "; 
 #echo
 #echo "free -g : "
@@ -40,70 +43,95 @@ df -hPT $DATABASEDIR
 
 #echo
 #echo Black Duck Version: 
-#psql -h $PGHOST -U postgres -d bds_hub \
+#psql -h $PGHOST -U $PGUSER -d bds_hub \
   #-c "SELECT version FROM st.v_hub ORDER BY installed_on DESC LIMIT 1 ; " 
 
-echo
-echo "du data/base :"
-du -sh $DATABASEDIR ; 
+#TODO: mod to allow aws rds
+#echo
+#echo "du data/base :"
+#du -sh $DATABASEDIR ; 
 
 echo
-psql -qAt -h $PGHOST -U postgres -d bds_hub -c "
+#psql -qAt -h $PGHOST -U $PGUSER -d bds_hub -c "
+psql -qAt -h $PGHOST -U $PGUSER -d template1 -c "
   SELECT version() 
 ; " ; 
 
 echo
 echo Black Duck Version: $(curl -k -s -L https://${BDHOST}/api/current-version | jq -r .version )
 
-echo
-psql -h $PGHOST -U postgres -d bds_hub -c "\\l+ " | grep -e Size -e bds -e alert
+#non-pg database names
+#echo
+#psql -h $PGHOST -U $PGUSER -d template1 -c "\\l+ " | grep -v -e " postgres " -e " template[01] " -e " rdsadmin "
 
 #echo
-#psql -h $PGHOST -U postgres -d bds_hub -c "
-#SELECT d.datname as Name,  pg_catalog.pg_get_userbyid(d.datdba) as Owner,
-    #CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT')
-        #THEN pg_catalog.pg_size_pretty(pg_catalog.pg_database_size(d.datname))
-        #ELSE 'No Access'
-    #END as Size
-#FROM pg_catalog.pg_database d
-    #order by
-    #CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT')
-        #THEN pg_catalog.pg_database_size(d.datname)
-        #ELSE NULL
-    #END desc -- nulls first
-    #LIMIT 20;"
+#echo database sizes
+##psql -h $PGHOST -U $PGUSER -d bds_hub -c "\\l+ " | grep -e Size -e bds -e alert
+##psql -h $PGHOST -U $PGUSER -d template1 -c "\\l+ " | grep -e Size -e bds -e alert
+#psql -h $PGHOST -U $PGUSER -d template1 -c "\\l+ "
+#psql -h $PGHOST -U $PGUSER -d template1 -c "SELECT pg_size_pretty(pg_database_size('dbname') );"
+
 
 echo
-psql -h $PGHOST -U postgres -d bds_hub -c "
-SELECT nspname || '.' || relname AS "relation",
-    pg_size_pretty(pg_relation_size(C.oid)) AS "size"
-  FROM pg_class C
-  LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
-  WHERE nspname NOT IN ('pg_catalog', 'information_schema')
-  ORDER BY pg_relation_size(C.oid) DESC
-  LIMIT 10;"
+echo database sizes
+psql -h $PGHOST -U $PGUSER -d bds_hub -c "
+SELECT d.datname as Name,  pg_catalog.pg_get_userbyid(d.datdba) as Owner,
+    CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT')
+        THEN pg_catalog.pg_size_pretty(pg_catalog.pg_database_size(d.datname))
+        ELSE 'No Access'
+    END as Size
+FROM pg_catalog.pg_database d
+    order by
+    CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT')
+        THEN pg_catalog.pg_database_size(d.datname)
+        ELSE NULL
+    END desc -- nulls first
+    LIMIT 10;" | grep -v -e " postgres " -e " template[01]" -e " rdsadmin "
+
+
+echo
+echo largest relations
+for mdb in bds_hub bds_hub_report alert ; do
+        echo largest relations in $mdb:
+	#psql -h $PGHOST -U $PGUSER -d bds_hub -c "
+	psql -h $PGHOST -U $PGUSER -d $mdb -c "
+	SELECT nspname || '.' || relname AS "relation",
+	    pg_size_pretty(pg_relation_size(C.oid)) AS "size"
+	  FROM pg_class C
+	  LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+	  --WHERE nspname NOT IN ('pg_catalog', 'information_schema')
+	  WHERE nspname NOT IN ('pg_catalog', 'information_schema','pg_toast')
+	  ORDER BY pg_relation_size(C.oid) DESC
+	  LIMIT 10;" 2> /dev/null
+          echo
+done
+
 
 echo
 for mcol in timetopersistms timetoscanms match_count num_non_dir_files num_dirs file_system_size ; 
 do 
   echo -n "max $mcol : " ; 
-  psql -h $PGHOST -qAt -U postgres -d bds_hub -c "SELECT MAX($mcol) FROM st.scan_scan ;"  ; 
+  psql -h $PGHOST -qAt -U $PGUSER -d bds_hub -c "SELECT MAX($mcol) FROM st.scan_scan ;"  ; 
 done ; 
 
 echo ;
-psql -qAt -h $PGHOST -U postgres -d bds_hub \
+psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT DISTINCT 'count unique scans' AS column, COUNT(id) FROM st.scan_scan ; " 
-psql -qAt -h $PGHOST -U postgres -d bds_hub \
+psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT DISTINCT 'count unique code locations' AS column, COUNT(code_location_id) FROM st.scan_scan ; "       
-psql -qAt -h $PGHOST -U postgres -d bds_hub \
+psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT DISTINCT 'count unique scan_source_id' AS column, COUNT(scan_source_id) FROM st.scan_scan ; "
-psql -qAt -h $PGHOST -U postgres -d bds_hub \
+psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT 'count unique release_ids' AS column, COUNT(*) FROM (SELECT DISTINCT project_id,release_id FROM st.version_bom) As tmp ; "
-psql -qAt -h $PGHOST -U postgres -d bds_hub \
+psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT 'count scan_component_dependency' AS column, COUNT(*) FROM st.scan_component_dependency ; "
+
 echo
-psql -h $PGHOST -U postgres -d bds_hub \
+echo Projects with most versions:
+psql -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT project_id, COUNT(release_id) AS proj_versions FROM st.version_bom GROUP BY project_id ORDER BY COUNT(release_id) DESC LIMIT 5 ; "
+
+echo
 echo TODO: bloat, db_user_stats
 
 
