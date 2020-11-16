@@ -49,9 +49,10 @@ do
    while [[ "$scan_count" != "$((version_count+1))" ]] 
    do
      echo -e bundle: $bundle"\t"goal versions this bundle: $version_count"\t"actual scans this bundle: $scan_count
-     echo scan here...
+     echo "$(date --utc +%Y%m%dT%H%M%SZ\ %a) : starting detect scan here...
 
-       bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
+       #bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
+       time bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
          --blackduck.url='https://sup-pjalajas-2.dc1.lan' \
          --blackduck.trust.cert='true' \
          --blackduck.username='sysadmin' \
@@ -68,6 +69,7 @@ do
 
 
      scan_count=$((scan_count+1)) # off by 1 at end, oh well
+     echo "$(date --utc +%Y%m%dT%H%M%SZ\ %a) : done detect scanning ${DETECTSOURCEPATHMOD} : PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_${bundle}_${version_count} : PVN_${bundle}_${version_count}_${scan_count}"
      echo sleeping $msleep ...
      sleep $msleep
    done 
