@@ -3,8 +3,9 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE:  2020-11-14
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011150315Z
+#VERSION: 2011161431Z
 #SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
+echo script: SnpsSigSup_BdScanProjVerLoad.bash :: version: 2011161431Z
 
 #PURPOSE:  Scan same source tree (sig scan and pkg mgr scan), in an assortments of 25 identical projects, split evenly among 5 bundles, each bundle having the project with 1, 3, 10, 30, and 100 versions of the project.  Should show level of deterioration of scanning as version count for the single project increases from 1 up through 3, 10, 30 and 100, but also show range of scan performance across the 5 copies of the project with 1 version, up through the 5 copies of the project with 100 versions.
 
@@ -13,7 +14,10 @@
 #CONFIG
 
 msleep=0s # increase substantially (15m?) if scans are crashing server
+msleep=30m # increase substantially (15m?) if scans are crashing server
 
+
+#INIT
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164" # small project for testing
@@ -45,9 +49,10 @@ do
    while [[ "$scan_count" != "$((version_count+1))" ]] 
    do
      echo -e bundle: $bundle"\t"goal versions this bundle: $version_count"\t"actual scans this bundle: $scan_count
-     echo scan here...
+     echo "$(date --utc +%Y%m%dT%H%M%SZ\ %a) : starting detect scan here...
 
-       bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
+       #bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
+       time bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
          --blackduck.url='https://sup-pjalajas-2.dc1.lan' \
          --blackduck.trust.cert='true' \
          --blackduck.username='sysadmin' \
@@ -64,6 +69,7 @@ do
 
 
      scan_count=$((scan_count+1)) # off by 1 at end, oh well
+     echo "$(date --utc +%Y%m%dT%H%M%SZ\ %a) : done detect scanning ${DETECTSOURCEPATHMOD} : PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_${bundle}_${version_count} : PVN_${bundle}_${version_count}_${scan_count}"
      echo sleeping $msleep ...
      sleep $msleep
    done 
