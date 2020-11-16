@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2011151754Z
+#VERSION: 2011161753Z
 #GREPVCKSUM: TODO 
 
 #PURPOSE: Try to give some details on the size of the Synopsys Black Duck (Hub) database, including db size, largest table sizes, counts of projects, scans, components, ec. 
@@ -29,10 +29,16 @@ PGUSER="blackduck"
 
 echo
 echo -e "$(date) : $(date --utc) \nSCRIPT HOST : $(hostname -f)     ::     BDHOST : ${BDHOST}     ::     PGHOST : ${PGHOST}"
-#echo "nproc : $(nproc) "; 
-#echo
-#echo "free -g : "
-#free -g ; 
+for mhost in localhost $BDHOST $PGHOST
+do 
+  echo $mhost
+  echo
+  #TODO hack, use timout cop out for aws rds pghost
+  timeout 3s ssh $mhost "echo nproc : $(nproc) " 
+  echo
+  timeout 3s ssh $mhost 'echo -e "free -g :\n$(free -g)"'
+  echo
+done
 
 echo
 echo $(grep -e MemTotal -e SwapTotal /proc/meminfo)
