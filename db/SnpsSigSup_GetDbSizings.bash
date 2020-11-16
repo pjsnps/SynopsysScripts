@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2011161753Z
+#VERSION: 2011161811Z
 #GREPVCKSUM: TODO 
 
 #PURPOSE: Try to give some details on the size of the Synopsys Black Duck (Hub) database, including db size, largest table sizes, counts of projects, scans, components, ec. 
@@ -29,6 +29,11 @@ PGUSER="blackduck"
 
 echo
 echo -e "$(date) : $(date --utc) \nSCRIPT HOST : $(hostname -f)     ::     BDHOST : ${BDHOST}     ::     PGHOST : ${PGHOST}"
+echo -n $0 
+grep "\#VERSION" $0  # TODO fix me, echos command
+echo
+
+
 for mhost in localhost $BDHOST $PGHOST
 do 
   echo $mhost
@@ -38,14 +43,16 @@ do
   echo
   timeout 3s ssh $mhost 'echo -e "free -g :\n$(free -g)"'
   echo
+  timeout 3s ssh $mhost 'echo $(grep -e MemTotal -e SwapTotal /proc/meminfo)'
+  echo
+  timeout 3s ssh $mhost 'df -hPT | grep -v -e container -e docker' #TODO fix me
+  echo
 done
 
 echo
-echo $(grep -e MemTotal -e SwapTotal /proc/meminfo)
 
 echo
-df -hPT $DATABASEDIR 
-#df -hPT | grep -e Filesystem -e /dev/mapper ; 
+#df -hPT $DATABASEDIR 
 
 #echo
 #echo Black Duck Version: 
