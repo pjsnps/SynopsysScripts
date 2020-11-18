@@ -4,7 +4,7 @@
 #SUPPORT: https://community.synopsys.com/s/, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
 #DATE:  2020-11-18
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011181833Z
+#VERSION: 2011181859Z minor notes
 
 #PURPOSE:  Check SSL connectivity through proxy from inside all active Docker containers.
 
@@ -14,8 +14,8 @@
 #NOTES:  Work in progress.  Lightly tested.  Corrections, suggestions welcome, please!
 
 #CONFIG
-#Edit mserverlist below. 
-#Edit grep CONTAINERS_TO_SKIP to skip some containers. 
+#Edit mserverlist below.  Example, add internal servers, Black Duck servers, JIRA, LDAP, whatever may be causing issues. 
+#Edit grep CONTAINERS_TO_SKIP to skip some containers.  TODO: logstash and cfssl don't have openssl; do we care? 
 
 #--> Hand enter proxy at "-proxy" below. If mitmproxy, use IP address.  # TODO fixme
 #TODO: export mproxy=$(dig +short sup-proxy01.dc1.lan):8080 ; 
