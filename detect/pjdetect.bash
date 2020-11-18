@@ -117,7 +117,6 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/conda-bunda"   
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/synopsys-detect"   # customer conda 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00816607"
-DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, jars only, see also jsjam for huge javascript project #7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
 
 #parallel du -sh "{}" ::: ls projects/multiexpanded/* | sort -k1hr | head
@@ -133,6 +132,7 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, 
 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/multiexpanded/tomtiger5" 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/" # expanded, 6.7 GB, 21 versions, 497,293 files       [pjalajas@sup-pjalajas-hub test]$ du -sh /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ 6.7G    /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -maxdepth 1 -type d -iname "*.exp" | wc -l 21 [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -type f | wc -l 497293
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
 DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the one above (command line option takes precedence).
 echo Printing some of source tree to compare apples... 
@@ -167,8 +167,8 @@ bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.password='blackduck' \
     --detect.cleanup='false' \
 \
-    --detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
-    --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
+    --detect.project.name="PN-pj-test-cloned" \
+    --detect.project.version.name="PVN_1109212443Z" \
 \
     --detect.source.path="${DETECTSOURCEPATHMOD}" \
 \
@@ -187,6 +187,8 @@ exit # NOTE: keep at least one blank line above this exit command.
 #REFERENCE
 : '
 
+    --detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
+    --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
     --detect.tools.excluded=SIGNATURE_SCAN \
 pj_clone PVN_1106161352Z
     --logging.level.detect='TRACE' \
