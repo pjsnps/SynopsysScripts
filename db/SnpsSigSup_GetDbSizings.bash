@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2011161811Z
+#VERSION: 2011170253Z
 #GREPVCKSUM: TODO 
 
 #PURPOSE: Try to give some details on the size of the Synopsys Black Duck (Hub) database, including db size, largest table sizes, counts of projects, scans, components, ec. 
@@ -143,6 +143,22 @@ echo
 echo Projects with most versions:
 psql -h $PGHOST -U $PGUSER -d bds_hub \
   -c "SELECT project_id, COUNT(release_id) AS proj_versions FROM st.version_bom GROUP BY project_id ORDER BY COUNT(release_id) DESC LIMIT 5 ; "
+
+
+echo
+
+echo "
+set search_path=st ;
+select status_applied, count(*) from scan_state_event group by status_applied;
+select * from scan_state_event where scan_id in (select a.id from (select id, trunc((timelastmodified-scantime)/60000,0) as scan_time from scan_scan where trunc((timelastmodified-scantime)/60000,0) > 40 order by scan_time desc limit 3) a) order by transition_timestamp_db;
+select * from scan_state_event where scan_id in (select a.id from (select id, trunc((timelastmodified-scantime)/60000,0) as scan_time from scan_scan where trunc((timelastmodified-scantime)/60000,0) <= 40 and trunc((timelastmodified-scantime)/60000,0) > 10 order by scan_time desc limit 3) a) order by transition_timestamp_db;
+select * from scan_state_event where scan_id in (select a.id from (select id, trunc((timelastmodified-scantime)/60000,0) as scan_time from scan_scan where trunc((timelastmodified-scantime)/60000,0) <= 10 and trunc((timelastmodified-scantime)/60000,0) > 0 order by scan_time desc limit 3) a) order by scan_id, transition_timestamp_db;
+select status_applied, count(*), trunc(avg(elapsed_msec_previous_state)/60000,0) as avg_scan_time_minutes, trunc(min(elapsed_msec_previous_state)/60000,0) as min_scan_time, trunc(max(elapsed_msec_previous_state)/60000,0) as max_scan_time from scan_state_event where scan_id not in (select distinct scan_id from scan_state_event where status_applied = 'ERROR') group by status_applied order by max_scan_time;
+" | \
+psql -h $PGHOST -U $PGUSER -d bds_hub 
+
+
+
 
 echo
 echo TODO: bloat, db_user_stats
