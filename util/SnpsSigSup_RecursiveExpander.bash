@@ -2,7 +2,8 @@
 #SCRIPT: SnpsSigSup_RecursiveExpander.bash
 #AUTHOR: pjalajas@blackducksoftware.com, pjalajas@synopsys.com
 #DATE: 2016-02-12, 2020-10-23, 2020-11-11
-#VERSION:  2011120541Z
+#VERSION:  2011180228Z
+#CHANGELOG: 2011180228Z note re TODO to report missing requirements only after failing to process such an archive (but keep going). 
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT:  https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
 
@@ -16,6 +17,7 @@
 #NOTES:  For each supported filename extension, script drills down into code tree and expands any such files it can see. For now, manually repeat until no more expansions performed (or tried).  
 
 #TODO:  parallelize - done
+#CHANGELOG: 2011180228Z note re TODO to report missing requirements only after failing to process such an archive (but keep going). 
 #TODO:  speed up even more:  https://stackoverflow.com/questions/23483162/what-is-the-best-way-to-speed-up-a-find-command-on-a-huge-directory-tree-using-g -- DONE! wow!
 #TODO:  add archive types; deal properly with bzip and gzip single files?
 #TODO:  process bad archive errors
