@@ -2,12 +2,14 @@
 #SCRIPT: SnpsSigSup_BdGetOfflineImages.bash
 #AUTHOR: pjalajas@synopsys.com et al.
 #DATE: 2020-11-18
-#VERSION: 2011182358Z ready for public testing
+#VERSION: 2011190104Z TODO xargs
 #LICENSE: SPDX Apache-2.0
 
 #CREDIT: pkgimgs.sh Alex Sullivan July 23rd 2020 at 3:09 PM, from original work of sheeley@synopsys.com
 
 #USAGE SnpsSigSup_BdGetOfflineImages.bash 2020.8.2
+
+#TODO: multithread with xargs, pull and tar.
 
 #Pull version images
 version=$1 # command line first position
@@ -125,3 +127,7 @@ echo 'Successfully saved offline images for Black Duck version: '${version}
 echo
 
 #REFERENCE
+
+#Push to sharepile:
+# 1770  20201118T193304ESTWed date ; date --utc  ; hostname -f ; pwd ; whoami ; lftp -p 990 -u "ue22fd33eb,$(cat ~/.pj)" -e "mput ./BlackDuckImages-2020.* -O SNPS-BD/Support/HUB/OfflineImages ; quit ; " ftps://synopsyssf.sharefileftp.com
+ #1771  20201118T194349ESTWed date ; date --utc  ; hostname -f ; pwd ; whoami ; lftp -p 990 -u "ue22fd33eb,$(cat ~/.pj)" -e "rels SNPS-BD/Support/HUB/OfflineImages ; quit ; " ftps://synopsyssf.sharefileftp.com
