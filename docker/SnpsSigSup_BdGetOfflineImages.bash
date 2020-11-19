@@ -35,7 +35,7 @@ echo
 echo Pulling these images...
 echo "${imgs}"
 echo
-echo "$imgs" | while read line ; do docker pull $line ; echo ; done
+echo "$imgs" | while read line ; do docker pull $line ; echo ; done # TODO xargs
 #echo Pulled these images...
 #docker image ls | grep "blackducksoftware/blackduck.*$version"
 #echo
@@ -103,7 +103,7 @@ counter=0
                 do
                     echo "Saving Container: "$container" Version:" $containerversion
                     #docker image save -o $container.tar blackducksoftware/blackduck-$container:$containerversion
-                    docker image save -o $container.tar blackducksoftware/$container:$containerversion
+                    docker image save -o $container.tar blackducksoftware/$container:$containerversion  # TODO xargs
             done
         let counter=counter+1
     done
@@ -112,7 +112,7 @@ cd ..
 echo 'Archiving files...'
 #Create Manageable archive
 #tar -czvf HubImages-${version[0]}.tar.gz HubImages-${version[0]}
-tar -czvf BlackDuckImages-${version}.tar.gz BlackDuckImages-${version}
+tar -czvf BlackDuckImages-${version}.tar.gz BlackDuckImages-${version}   # TODO xargs
 echo
   
 #Cleanup
@@ -131,3 +131,7 @@ echo
 #Push to sharepile:
 # 1770  20201118T193304ESTWed date ; date --utc  ; hostname -f ; pwd ; whoami ; lftp -p 990 -u "ue22fd33eb,$(cat ~/.pj)" -e "mput ./BlackDuckImages-2020.* -O SNPS-BD/Support/HUB/OfflineImages ; quit ; " ftps://synopsyssf.sharefileftp.com
  #1771  20201118T194349ESTWed date ; date --utc  ; hostname -f ; pwd ; whoami ; lftp -p 990 -u "ue22fd33eb,$(cat ~/.pj)" -e "rels SNPS-BD/Support/HUB/OfflineImages ; quit ; " ftps://synopsyssf.sharefileftp.com
+
+#To load:
+#When the customer has the images, they will need to enter the extracted archive, which will contain all of the images saved as .tar files. A customer can load them all at once by using the command:
+#ls | while read image; do docker load -i $image; done # xargs? 
