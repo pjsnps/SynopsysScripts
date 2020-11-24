@@ -2,8 +2,8 @@
 #SCRIPT: SnpsSigSup_RecursiveExpander.bash
 #AUTHOR: pjalajas@blackducksoftware.com, pjalajas@synopsys.com
 #DATE: 2016-02-12, 2020-10-23, 2020-11-11
-#VERSION:  2011180228Z
-#CHANGELOG: 2011180228Z note re TODO to report missing requirements only after failing to process such an archive (but keep going). 
+#VERSION:  2011231829Z
+#CHANGELOG: i2011231829Z try add ova (vmware; tar format)
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT:  https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
 
@@ -45,7 +45,7 @@ fi
 
 #SUPPORTED EXTENSIONS
 #copy to here from case test block 
-export msupportedstring='apk|ear|ipa|war|zip|tar.gz|tgz|tar|tbz|tbz2|taz|tb2|tlz|tzst|tz2|tz|bz|bz2|gzip' #  CURRENTLY SUPPORTED EXTENSIONS
+export msupportedstring='apk|ear|ipa|war|zip|tar.gz|tgz|tar|tbz|tbz2|taz|tb2|tlz|tzst|tz2|tz|bz|bz2|gzip|ova' #  CURRENTLY SUPPORTED EXTENSIONS
 #Set mexpanded to true at top of file tree search, immediately set to false, then set to true is any files attempted to be expanded.
 #mexpanded=true 
 touch "/tmp/SnpsSigSup_RecursiveExpander.bash.mexpanded" # TODO can probably use better filename...
@@ -88,7 +88,7 @@ function f_main {
         #export mexpanded=true
         touch "/tmp/SnpsSigSup_RecursiveExpander.bash.mexpanded"
         ;;
-      tar.gz|tgz|tar|tbz|tbz2|taz|tb2|tlz|tzst|tz2|tz)
+      tar.gz|tgz|tar|tbz|tbz2|taz|tb2|tlz|tzst|tz2|tz|ova)
         #all file types that can be expanded with "tar xf".
         mexpanded_dir="$(f_mexpand_dir $mfullfile)"
         tar xf "${mfullfile}" -C "${mexpanded_dir}" 2> /dev/null
