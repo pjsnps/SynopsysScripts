@@ -1,5 +1,8 @@
 #!/bin/bash
-#
+#SCRIPT:  SnpsSigSup_ScanStatus.bash
+
+#USAGE: #[pjalajas@sup-pjalajas-hub SynopsysScripts]$ bash ./SnpsSigSup_ScanStatus.bash -u https://sup-pjalajas-hub.dc1.lan -a 'Nzg1ZjEyZjctM2RjZC00Y2Y3LTkxNWItZTgyMjJiOGJmYTVhOjYzYmRlODNjLTRmNTEtNDA0OS1iYmY3LTc3ZDVjOTkxYTU2Ng==' -p PN-pj-test-cloned -v PVN_1109212443Z --consider-snippets false
+
 # Copyright (c) 2020 Synopsys, Inc. All rights reserved worldwide. The information
 # contained in this file is the proprietary and confidential information of
 # Synopsys, Inc. and its licensors, and is supplied subject to, and may be used
@@ -269,3 +272,10 @@ function main()
 ################################ MAIN ####################################
 main
 ##########################################################################
+
+
+#
+: '
+#USAGE: #[pjalajas@sup-pjalajas-hub SynopsysScripts]$ bash ./SnpsSigSup_ScanStatus.bash -u https://sup-pjalajas-hub.dc1.lan -a 'Nzg1ZjEyZjctM2RjZC00Y2Y3LTkxNWItZTgyMjJiOGJmYTVhOjYzYmRlODNjLTRmNTEtNDA0OS1iYmY3LTc3ZDVjOTkxYTU2Ng==' -p PN-pj-test-cloned -v PVN_1109212443Z --consider-snippets false
+
+'
