@@ -179,6 +179,7 @@ bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
 \
     --detect.detector.search.depth=200 \
     --detect.detector.search.continue=true \
+    --logging.level.detect='TRACE' \
 \
 
 
@@ -191,7 +192,6 @@ exit # NOTE: keep at least one blank line above this exit command.
     --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
     --detect.tools.excluded=SIGNATURE_SCAN \
 pj_clone PVN_1106161352Z
-    --logging.level.detect='TRACE' \
     --detect.project.name="005752ZTue" \
     --detect.project.version.name='PVN_1106161352Z' \
     --detect.project.version.name='1.0' \

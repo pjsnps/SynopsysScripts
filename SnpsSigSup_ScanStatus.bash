@@ -38,7 +38,7 @@ BUT, Scan not still running:
 
 [pjalajas@sup-pjalajas-hub git]$ docker container exec -upostgres adb543463eba psql -x -d bds_hub -c "SELECT * FROM pg_stat_activity WHERE query LIKE '%scan_%' AND application_name <> 'psql'  ; " | less -inRF
 (0 rows)
-__TODO but how to make sure some other scan is not hitting scan_ tables...
+__TODO but how to make sure some other scan is not hitting scan_ tables...just because a scan_ query is running, it doesnt mean our scan is still running.
 
 
 
