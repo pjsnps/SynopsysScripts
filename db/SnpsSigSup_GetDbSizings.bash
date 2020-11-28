@@ -4,8 +4,9 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2011170253Z
+#VERSION: 2011281554Z
 #GREPVCKSUM: TODO 
+#CHANGELOG: 2011281554Z update for container db (was external-focused)
 
 #PURPOSE: Try to give some details on the size of the Synopsys Black Duck (Hub) database, including db size, largest table sizes, counts of projects, scans, components, ec. 
 
@@ -15,8 +16,10 @@
 
 #CONFIG
 BDHOST=sup-pjalajas-2.dc1.lan
-PGHOST="${BDHOST}"
+BDHOST=sup-pjalajas-hub.dc1.lan
 PGHOST="pjalajas-blackduck-2020-10-0c.cyabejla8bjm.us-east-1.rds.amazonaws.com"
+PGHOST="${BDHOST}"
+PGPORT=55436
 PGUSER="blackduck"
 #TODO:  mod db dir commands for aws rds
 #DATABASEDIR=/var/lib/pgsql/9.6/data/base # no trailing slash
@@ -25,6 +28,9 @@ PGUSER="blackduck"
 #TODO: add instruction to copy to SSH="ssh -t sup-pjalajas-2"  # to pull from remote Black Duck server; workaround for now: copy this script to remote /tmp then run over ssh
 #TODO: make sure we are getting the data from the correct host (script, bd, pg)...until then, just run it on the bd or pg host.
 
+#INITIALIZE
+export PGCONN=" -h $PGHOST -p $PGPORT -U $PGUSER "
+echo PGCONN=\'$PGCONN\'
 #MAIN
 
 echo
@@ -34,7 +40,7 @@ grep "\#VERSION" $0  # TODO fix me, echos command
 echo
 
 
-for mhost in localhost $BDHOST $PGHOST
+for mhost in $(echo -e "$(hostname -f)\n$BDHOST\n$PGHOST" | sort -u) 
 do 
   echo $mhost
   echo
@@ -65,12 +71,15 @@ echo
 #du -sh $DATABASEDIR ; 
 
 echo
+echo "psql select version: "
 #psql -qAt -h $PGHOST -U $PGUSER -d bds_hub -c "
-psql -qAt -h $PGHOST -U $PGUSER -d template1 -c "
+#psql -qAt -h $PGHOST -U $PGUSER -d template1 -c "
+psql -qAt $PGCONN -d template1 -c "
   SELECT version() 
 ; " ; 
 
 echo
+echo "curl bdhost current-version:" 
 echo Black Duck Version: $(curl -k -s -L https://${BDHOST}/api/current-version | jq -r .version )
 
 #non-pg database names
@@ -87,7 +96,8 @@ echo Black Duck Version: $(curl -k -s -L https://${BDHOST}/api/current-version |
 
 echo
 echo database sizes
-psql -h $PGHOST -U $PGUSER -d bds_hub -c "
+#psql -h $PGHOST -U $PGUSER -d bds_hub -c "
+psql $PGCONN -d bds_hub -c "
 SELECT d.datname as Name,  pg_catalog.pg_get_userbyid(d.datdba) as Owner,
     CASE WHEN pg_catalog.has_database_privilege(d.datname, 'CONNECT')
         THEN pg_catalog.pg_size_pretty(pg_catalog.pg_database_size(d.datname))
@@ -99,15 +109,16 @@ FROM pg_catalog.pg_database d
         THEN pg_catalog.pg_database_size(d.datname)
         ELSE NULL
     END desc -- nulls first
-    LIMIT 10;" | grep -v -e " postgres " -e " template[01]" -e " rdsadmin "
+    LIMIT 10;" #| grep -v -e " postgres " -e " template[01]" -e " rdsadmin "
 
 
+	#psql -h $PGHOST -U $PGUSER -d bds_hub -c "
+	#psql -h $PGHOST -U $PGUSER -d $mdb -c "
 echo
 echo largest relations
 for mdb in bds_hub bds_hub_report alert ; do
         echo largest relations in $mdb:
-	#psql -h $PGHOST -U $PGUSER -d bds_hub -c "
-	psql -h $PGHOST -U $PGUSER -d $mdb -c "
+	psql $PGCONN -d $mdb -c "
 	SELECT nspname || '.' || relname AS "relation",
 	    pg_size_pretty(pg_relation_size(C.oid)) AS "size"
 	  FROM pg_class C
@@ -121,27 +132,34 @@ done
 
 
 echo
+  #psql -h $PGHOST -qAt -U $PGUSER -d bds_hub -c "SELECT MAX($mcol) FROM st.scan_scan ;"  ; 
 for mcol in timetopersistms timetoscanms match_count num_non_dir_files num_dirs file_system_size ; 
 do 
   echo -n "max $mcol : " ; 
-  psql -h $PGHOST -qAt -U $PGUSER -d bds_hub -c "SELECT MAX($mcol) FROM st.scan_scan ;"  ; 
+  psql -qAt $PGCONN -d bds_hub -c "SELECT MAX($mcol) FROM st.scan_scan ;"  ; 
 done ; 
 
 echo ;
-psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+#psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+psql -qAt $PGCONN -d bds_hub \
   -c "SELECT DISTINCT 'count unique scans' AS column, COUNT(id) FROM st.scan_scan ; " 
-psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+#psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+psql -qAt $PGCONN -d bds_hub \
   -c "SELECT DISTINCT 'count unique code locations' AS column, COUNT(code_location_id) FROM st.scan_scan ; "       
-psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+#psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+psql -qAt $PGCONN -d bds_hub \
   -c "SELECT DISTINCT 'count unique scan_source_id' AS column, COUNT(scan_source_id) FROM st.scan_scan ; "
-psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+#psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+psql -qAt $PGCONN -d bds_hub \
   -c "SELECT 'count unique release_ids' AS column, COUNT(*) FROM (SELECT DISTINCT project_id,release_id FROM st.version_bom) As tmp ; "
-psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+#psql -qAt -h $PGHOST -U $PGUSER -d bds_hub \
+psql -qAt $PGCONN -d bds_hub \
   -c "SELECT 'count scan_component_dependency' AS column, COUNT(*) FROM st.scan_component_dependency ; "
 
 echo
 echo Projects with most versions:
-psql -h $PGHOST -U $PGUSER -d bds_hub \
+#psql -h $PGHOST -U $PGUSER -d bds_hub \
+psql $PGCONN -d bds_hub \
   -c "SELECT project_id, COUNT(release_id) AS proj_versions FROM st.version_bom GROUP BY project_id ORDER BY COUNT(release_id) DESC LIMIT 5 ; "
 
 
@@ -155,7 +173,8 @@ select * from scan_state_event where scan_id in (select a.id from (select id, tr
 select * from scan_state_event where scan_id in (select a.id from (select id, trunc((timelastmodified-scantime)/60000,0) as scan_time from scan_scan where trunc((timelastmodified-scantime)/60000,0) <= 10 and trunc((timelastmodified-scantime)/60000,0) > 0 order by scan_time desc limit 3) a) order by scan_id, transition_timestamp_db;
 select status_applied, count(*), trunc(avg(elapsed_msec_previous_state)/60000,0) as avg_scan_time_minutes, trunc(min(elapsed_msec_previous_state)/60000,0) as min_scan_time, trunc(max(elapsed_msec_previous_state)/60000,0) as max_scan_time from scan_state_event where scan_id not in (select distinct scan_id from scan_state_event where status_applied = 'ERROR') group by status_applied order by max_scan_time;
 " | \
-psql -h $PGHOST -U $PGUSER -d bds_hub 
+psql $PGCONN -d bds_hub 
+#psql -h $PGHOST -U $PGUSER -d bds_hub 
 
 
 
