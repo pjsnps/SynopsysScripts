@@ -2,10 +2,10 @@
 #SCRIPT: util/SnpsSigSup_TestJira.bash
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2020-11-24
-#VERSION: 2011301749Z
 #LICENSE: SPDX Apache-2.0
 #SUPPORT:  TODO
-#CHANGELOG: 2011301749Z pj add command line case/options, tests
+#VERSION: 2011302303Z
+#CHANGELOG: 2011302303Z pj add REFERENCE single command line to get user perms on ticket without without this script 
 
 
 #USAGE: bash util/SnpsSigSup_TestJira.bash 0 | grep "^{" | sed -re 's/<= Recv data.*//g' | jq -C '.' | head
@@ -132,6 +132,14 @@ exit
 #REFERENCE
 
 #curl       -D, --dump-header <file>
+
+USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
+JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net
+ISSUE_KEY="AT-1" #human readable jira ticket id, not numeric issue id (though I think that works too)
+CURL_TRACEASCII_OUT="-"  # could be /dev/null or a file
+CURL_DATA=' '  # don't edit, populated below if needed.
+CURLURL="$JIRASERVERURL/rest/api/3/mypermissions?issueKey=${ISSUE_KEY}&permissions=ADD_COMMENTS,ADMINISTER,ADMINISTER_PROJECTS,ASSIGNABLE_USER,ASSIGN_ISSUES,BROWSE_PROJECTS,BULK_CHANGE,CLOSE_ISSUES,CREATE_ATTACHMENTS,CREATE_ISSUES,CREATE_PROJECT,CREATE_SHARED_OBJECTS,DELETE_ALL_ATTACHMENTS,DELETE_ALL_COMMENTS,DELETE_ALL_WORKLOGS,DELETE_ISSUES,DELETE_OWN_ATTACHMENTS,DELETE_OWN_COMMENTS,DELETE_OWN_WORKLOGS,EDIT_ALL_COMMENTS,EDIT_ALL_WORKLOGS,EDIT_ISSUES,EDIT_OWN_COMMENTS,EDIT_OWN_WORKLOGS,LINK_ISSUES,MANAGE_GROUP_FILTER_SUBSCRIPTIONS,MANAGE_SPRINTS_PERMISSION,MANAGE_WATCHERS,MODIFY_REPORTER,MOVE_ISSUES,RESOLVE_ISSUES,SCHEDULE_ISSUES,SET_ISSUE_SECURITY,SYSTEM_ADMIN,TRANSITION_ISSUES,USER_PICKER,VIEW_DEV_TOOLS,VIEW_READONLY_WORKFLOW,VIEW_VOTERS_AND_WATCHERS,WORK_ON_ISSUES"
+curl --silent --show-error --trace-ascii ${CURL_TRACEASCII_OUT} -D- -u "${USERSTRING}" -X GET -H "Content-Type: application/json" ${CURLURL} | grep '^{' | sed -re 's/<= Recv data.*//g' | jq -r -c '.permissions | to_entries[] | select((.value.havePermission==true) and (.key | contains("_ISSUE")))'
 
 
 : '
