@@ -4,8 +4,8 @@
 #DATE: 2020-11-24
 #LICENSE: SPDX Apache-2.0
 #SUPPORT:  TODO
-#VERSION: 2011302303Z
-#CHANGELOG: 2011302303Z pj add REFERENCE single command line to get user perms on ticket without without this script 
+#VERSION: 2012011901Z
+#CHANGELOG: 2012011901Z pj add case 4: PUT com-synopsys-integration-alert
 
 
 #USAGE: bash util/SnpsSigSup_TestJira.bash 0 | grep "^{" | sed -re 's/<= Recv data.*//g' | jq -C '.' | head
@@ -98,6 +98,18 @@ case "$1" in
   CURL_DATA=' { "update": {}, "transition": { "id": "31" }} '  # In Review
   CURLURL="$JIRASERVERURL/rest/api/2/issue/${ISSUE_KEY}/transitions"
  ;;
+"4")
+  #Test perms at https://jirahost.customer.com/jira-test/rest/api/2/issue/HLRSDTEST-12/properties/com-synopsys-integration-alert
+  # 2020-11-25 04:06:43.671 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : InternalEntityEclosingRequest : PUT https://jirahost.customer.com/jira-test/rest/api/2/issue/HLRSDTEST-12/properties/com-synopsys-integration-alert HTTP/1.1
+  #2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : HttpResponseProxy : HttpResponseProxy{HTTP/1.1 403 Forbidden [Server: squid/4.1, Mime-Version: 1.0, Date: Wed, 25 Nov 2020 04:06:43 GMT, Content-Type: text/html;charset=utf-8, Content-Length: 4135, X-Squid-Error: ERR_ACCESS_DENIED 0, X-Cache: MISS from dc-pxy-loc-sqd-inf-a1.env.eng.customer.com, X-Cache-Lookup: NONE from dc-pxy-loc-sqd-inf-a1.env.eng.customer.com:3128, Via: 1.1 dc-pxy-loc-sqd-inf-a1.env.eng.customer.com (squid/4.1), Connection: close] ResponseEntityProxy{[Content-Type: text/html;charset=utf-8,Content-Length: 4135,Chunked: false]}}
+  CURLX="PUT"
+  CURL_DATA=' { "topicName": "pj topicName" } '  # TOOD: just guessing  
+  CURLURL="$JIRASERVERURL/rest/api/2/issue/${ISSUE_KEY}/properties/com-synopsys-integration-alert"
+ ;;
+"4a")
+  CURLX="GET"
+  CURLURL="$JIRASERVERURL/rest/api/2/issue/${ISSUE_KEY}/properties/com-synopsys-integration-alert"
+ ;;
 esac 
 
 
@@ -133,6 +145,23 @@ exit
 
 #curl       -D, --dump-header <file>
 
+: '
+Send to customer to test Jira plugin perms:
+
+USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
+JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net
+ISSUE_KEY="AT-1" #human readable jira ticket id, not numeric issue id (though I think that works too)
+CURL_TRACEASCII_OUT="-"  # could be /dev/null or a file
+CURLX="PUT"
+CURL_DATA=' { "topicName": "pj topicName" } ' 
+CURLURL="$JIRASERVERURL/rest/api/2/issue/${ISSUE_KEY}/properties/com-synopsys-integration-alert"
+curl --silent --show-error --trace-ascii ${CURL_TRACEASCII_OUT} -D- -u "${USERSTRING}" -X ${CURLX} --data "${CURL_DATA}" -H "Content-Type: application/json" ${CURLURL} | less -inRF
+
+'
+
+
+: '
+Can send this bundle to customer without this script:
 USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
 JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net
 ISSUE_KEY="AT-1" #human readable jira ticket id, not numeric issue id (though I think that works too)
@@ -140,6 +169,35 @@ CURL_TRACEASCII_OUT="-"  # could be /dev/null or a file
 CURL_DATA=' '  # don't edit, populated below if needed.
 CURLURL="$JIRASERVERURL/rest/api/3/mypermissions?issueKey=${ISSUE_KEY}&permissions=ADD_COMMENTS,ADMINISTER,ADMINISTER_PROJECTS,ASSIGNABLE_USER,ASSIGN_ISSUES,BROWSE_PROJECTS,BULK_CHANGE,CLOSE_ISSUES,CREATE_ATTACHMENTS,CREATE_ISSUES,CREATE_PROJECT,CREATE_SHARED_OBJECTS,DELETE_ALL_ATTACHMENTS,DELETE_ALL_COMMENTS,DELETE_ALL_WORKLOGS,DELETE_ISSUES,DELETE_OWN_ATTACHMENTS,DELETE_OWN_COMMENTS,DELETE_OWN_WORKLOGS,EDIT_ALL_COMMENTS,EDIT_ALL_WORKLOGS,EDIT_ISSUES,EDIT_OWN_COMMENTS,EDIT_OWN_WORKLOGS,LINK_ISSUES,MANAGE_GROUP_FILTER_SUBSCRIPTIONS,MANAGE_SPRINTS_PERMISSION,MANAGE_WATCHERS,MODIFY_REPORTER,MOVE_ISSUES,RESOLVE_ISSUES,SCHEDULE_ISSUES,SET_ISSUE_SECURITY,SYSTEM_ADMIN,TRANSITION_ISSUES,USER_PICKER,VIEW_DEV_TOOLS,VIEW_READONLY_WORKFLOW,VIEW_VOTERS_AND_WATCHERS,WORK_ON_ISSUES"
 curl --silent --show-error --trace-ascii ${CURL_TRACEASCII_OUT} -D- -u "${USERSTRING}" -X GET -H "Content-Type: application/json" ${CURLURL} | grep '^{' | sed -re 's/<= Recv data.*//g' | jq -r -c '.permissions | to_entries[] | select((.value.havePermission==true) and (.key | contains("_ISSUE")))'
+
+'
+
+
+
+
+: '
+2020-11-25 04:06:43.671 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : starting request: https://jirahost.customer.com/jira-test/rest/api/2/issue/HLRSDTEST-12/properties/com-synopsys-integration-alert
+2020-11-25 04:06:43.671 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : InternalEntityEclosingRequest : PUT https://jirahost.customer.com/jira-test/rest/api/2/issue/HLRSDTEST-12/properties/com-synopsys-integration-alert HTTP/1.1
+2020-11-25 04:06:43.671 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : InternalEntityEclosingRequest headers : 
+2020-11-25 04:06:43.671 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Authorization : Basic YW5vb3NoYV9pbnRlcm5hbDphbm9vc2hhX2ludGVybmFs
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : HttpResponseProxy : HttpResponseProxy{HTTP/1.1 403 Forbidden [Server: squid/4.1, Mime-Version: 1.0, Date: Wed, 25 Nov 2020 04:06:43 GMT, Content-Type: text/html;charset=utf-8, Content-Length: 4135, X-Squid-Error: ERR_ACCESS_DENIED 0, X-Cache: MISS from dc-pxy-loc-sqd-inf-a1.env.eng.customer.com, X-Cache-Lookup: NONE from dc-pxy-loc-sqd-inf-a1.env.eng.customer.com:3128, Via: 1.1 dc-pxy-loc-sqd-inf-a1.env.eng.customer.com (squid/4.1), Connection: close] ResponseEntityProxy{[Content-Type: text/html;charset=utf-8,Content-Length: 4135,Chunked: false]}}
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : HttpResponseProxy headers : 
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Server : squid/4.1
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Mime-Version : 1.0
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Date : Wed, 25 Nov 2020 04:06:43 GMT
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Content-Type : text/html;charset=utf-8
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Content-Length : 4135
+2020-11-25 04:06:43.793 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header X-Squid-Error : ERR_ACCESS_DENIED 0
+2020-11-25 04:06:43.794 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header X-Cache : MISS from dc-pxy-loc-sqd-inf-a1.env.eng.customer.com
+2020-11-25 04:06:43.794 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header X-Cache-Lookup : NONE from dc-pxy-loc-sqd-inf-a1.env.eng.customer.com:3128
+2020-11-25 04:06:43.794 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Via : 1.1 dc-pxy-loc-sqd-inf-a1.env.eng.customer.com (squid/4.1)
+2020-11-25 04:06:43.794 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : Header Connection : close
+2020-11-25 04:06:43.794 TRACE 1 --- [nio-8443-exec-6] c.s.i.a.c.j.s.JiraServerRequestDelegator : completed request: https://jirahost.customer.com/jira-test/rest/api/2/issue/HLRSDTEST-12/properties/com-synopsys-integration-alert (123 ms)
+
+
+'
+
+
 
 
 : '
