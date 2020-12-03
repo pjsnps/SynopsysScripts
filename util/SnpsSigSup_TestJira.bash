@@ -4,8 +4,8 @@
 #DATE: 2020-11-24
 #LICENSE: SPDX Apache-2.0
 #SUPPORT:  TODO
-#VERSION: 2012011901Z
-#CHANGELOG: 2012011901Z pj add case 4: PUT com-synopsys-integration-alert
+#VERSION: 2012022153Z
+#CHANGELOG: 2012022153Z pj add case "5" POST create jira issue
 
 
 #USAGE: bash util/SnpsSigSup_TestJira.bash 0 | grep "^{" | sed -re 's/<= Recv data.*//g' | jq -C '.' | head
@@ -25,7 +25,8 @@
 
 #snps-sig-sup-pjalajas.atlassian.net
 USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
-JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net
+JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net, no trailing slash
+PROJECT_KEY="AT" #human readable jira ticket project, not numeric issue id (though I think that works too)
 ISSUE_KEY="AT-1" #human readable jira ticket id, not numeric issue id (though I think that works too)
 CURL_TRACEASCII_OUT="-"  # could be /dev/null or a file
 
@@ -110,6 +111,15 @@ case "$1" in
   CURLX="GET"
   CURLURL="$JIRASERVERURL/rest/api/2/issue/${ISSUE_KEY}/properties/com-synopsys-integration-alert"
  ;;
+"5")
+  #Create a new JIRA issue
+  #CURLX="POST"  # official, but fails on current testing...trying PUT...
+  CURLX="PUT" # HTTP/1.1 405 Method Not Allowed, 0000: allow: POST,OPTIONS
+  CURLX="OPTIONS"  # HTTP/1.1 204 No Content
+  CURLX="POST"  # official, should work, but fails on current testing... Replace Bug with Task if needed. 
+  CURL_DATA='{ "fields": { "project": { "key": "'${PROJECT_KEY}'" }, "summary": "PJ Ticket Summary here....", "description": "PJ Creating of an issue using project keys and issue type names using the REST API", "issuetype": { "name": "Bug" } } }'
+  CURLURL="$JIRASERVERURL/rest/api/2/issue"
+  ;;
 esac 
 
 
@@ -148,6 +158,19 @@ exit
 : '
 Send to customer to test Jira plugin perms:
 
+#To test POST creating new jira issue
+#Change issueType "Bug" if needed for customer env.  Task? https://support.atlassian.com/jira-cloud-administration/docs/what-are-issue-types/ Not sure if case sensitive. 
+USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
+JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net
+PROJECT_KEY="AT" #human readable jira ticket project, not numeric issue id (though I think that works too)
+CURL_TRACEASCII_OUT="-"  # could be /dev/null or a file
+CURLX="POST"
+CURL_DATA='{ "fields": { "project": { "key": "'${PROJECT_KEY}'" }, "summary": "PJ Ticket Summary here....", "description": "PJ Creating of an issue using project keys and issue type names using the REST API", "issuetype": { "name": "Bug" } } }'
+CURLURL="$JIRASERVERURL/rest/api/2/issue"
+curl --silent --show-error --trace-ascii ${CURL_TRACEASCII_OUT} -D- -u "${USERSTRING}" -X ${CURLX} --data "${CURL_DATA}" -H "Content-Type: application/json" ${CURLURL} |& less -inRF
+
+
+#To test PUT updating issue
 USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
 JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net
 ISSUE_KEY="AT-1" #human readable jira ticket id, not numeric issue id (though I think that works too)
