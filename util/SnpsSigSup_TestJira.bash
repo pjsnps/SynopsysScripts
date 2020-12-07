@@ -4,8 +4,8 @@
 #DATE: 2020-11-24
 #LICENSE: SPDX Apache-2.0
 #SUPPORT:  TODO
-#VERSION: 2012022153Z
-#CHANGELOG: 2012022153Z pj add case "5" POST create jira issue
+#VERSION: 2012030242Z
+#CHANGELOG: 2012030242Z pj tweaks 
 
 
 #USAGE: bash util/SnpsSigSup_TestJira.bash 0 | grep "^{" | sed -re 's/<= Recv data.*//g' | jq -C '.' | head
@@ -27,6 +27,7 @@
 USERSTRING="$(grep pjalajas@blackduckcloud.com ~/.pj)" # username:token ; WORKS, with api token, (google auth 2FA enabled)
 JIRASERVERURL='https://snps-sig-sup-pjalajas.atlassian.net' # like https://snps-sig-sup-pjalajas.atlassian.net, no trailing slash
 JIRASERVERURL='http://127.0.0.1:40002' # like https://snps-sig-sup-pjalajas.atlassian.net, no trailing slash
+JIRASERVERURL='http://10.1.65.171:40002' # like https://snps-sig-sup-pjalajas.atlassian.net, no trailing slash
 PROJECT_KEY="AT" #human readable jira ticket project, not numeric issue id (though I think that works too)
 ISSUE_KEY="AT-1" #human readable jira ticket id, not numeric issue id (though I think that works too)
 CURL_TRACEASCII_OUT="-"  # could be /dev/null or a file
@@ -41,7 +42,7 @@ CURL_DATA=' '  # don't edit, populated below if needed.
 
 #MAIN
 
-#Read command line option, prep curl command
+#This case block just reads command line test option number, preps curl command.  Curl command is down below. 
 case "$1" in
 "0")
   #Get full list of all available user perms
@@ -157,6 +158,17 @@ exit
 #curl       -D, --dump-header <file>
 : '
 To take Jira out of the testing, to focus on whether proxy is causing issue, use socat to just return 200; if proxy returns access denied, then you know its the proxy, not the jira.
+
+Surrogate Jira with socat.  
+On host as topologically near to current Jira as practical, preferrably but not required to not be on Alert host, run: 
+SC_LPORT=40002 # socat listen port 
+socat tcp-listen:${SC_LPORT},reuseaddr,fork "exec:printf \'HTTP/1.1 200 OK\r\n\r\n\'" 
+SC_LPORT must not be blocked by iptables or other firewalls. 
+Run failing PUT test:  
+curl … --proxy <proxy> PUT … <socat host>:<sc_lport>   
+For socat_host, use the external IP of the host you ran socat on (run ip addr to find that; the ip address one would normally use to connect to that host on which we are using socat) 
+Should return 200; if Access Denied then proxy is blocking.  
+
 [pjalajas@sup-pjalajas-hub SynopsysScripts]$ bash util/SnpsSigSup_TestJira.bash 4 |& less -inRF
 == Info: About to connect() to 127.0.0.1 port 40002 (#0)
 == Info:   Trying 127.0.0.1...
