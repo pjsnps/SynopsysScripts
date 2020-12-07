@@ -4,7 +4,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 : https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2012072316Z : pj add bloat
+#VERSION: 2012072347Z pj add note re adding more actions from https://bucardo.org/check_postgres/
 #GREPVCKSUM: TODO 
 
 #PURPOSE: Try to give some details on the size of the Synopsys Black Duck (Hub) database, including db size, largest table sizes, counts of projects, scans, components, ec. 
@@ -253,7 +253,7 @@ echo "$BLOAT_SQL" | \
   psql $PGCONN -d bds_hub 
 
 echo
-echo TODO: bloat, db_user_stats
+echo TODO: add db_user_stats, add more actions from https://bucardo.org/check_postgres/
 
 
 exit
