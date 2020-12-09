@@ -119,6 +119,7 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00816607"
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, jars only, see also jsjam for huge javascript project #7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
 
+
 #parallel du -sh "{}" ::: ls projects/multiexpanded/* | sort -k1hr | head
 #27G     projects/multiexpanded/tomtiger27
 #9.9G    projects/multiexpanded/tomtiger10
@@ -134,7 +135,9 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/multiexpanded/t
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/" # expanded, 6.7 GB, 21 versions, 497,293 files       [pjalajas@sup-pjalajas-hub test]$ du -sh /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ 6.7G    /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -maxdepth 1 -type d -iname "*.exp" | wc -l 21 [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -type f | wc -l 497293
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
-DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the one above (command line option takes precedence).
+DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119/fluentd-kubernetes-daemonset_v1.11.5-debian-cloudwatch-1.0.tar" # sig scans, but not docker scan     --detect.docker.image
+DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119"
+DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the last one set above (command line option takes precedence).
 echo Printing some of source tree to compare apples... 
 find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
 
@@ -167,10 +170,11 @@ bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.password='blackduck' \
     --detect.cleanup='false' \
 \
-    --detect.project.name="PN-pj-test-cloned" \
-    --detect.project.version.name="PVN_1109212443Z" \
+    --detect.project.name="PN_00825119_1209182325Z" \
+    --detect.project.version.name='PVN_1209182325Z' \
 \
     --detect.source.path="${DETECTSOURCEPATHMOD}" \
+    --detect.docker.image="fluent/fluentd-kubernetes-daemonset:v1.11.5-debian-cloudwatch-1.0" \
 \
     --detect.project.version.notes="$(echo "${DETECTSOURCEPATHMOD}")\ $(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
 \
