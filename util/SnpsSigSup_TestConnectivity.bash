@@ -4,35 +4,48 @@
 #DATE: 2020-12-09
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
 #SUPPORT: https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
-#VERSION: 2012092029Z pj initial
+#VERSION: 2012092315Z pj clean up for public consumption
 
-#PURPOSE: To test Synopsys Detect connectivity to Black Duck server, etc 
+#PURPOSE: To test, among other things, Synopsys Detect connectivity to Black Duck server, etc 
 
-#NOTES: Sorry it's so messy; it's in heavy use and modification all day every day.  Corrections, suggestions welcome, please!
+#NOTES: New script, under development.  Corrections, suggestions welcome, please!
 #NOTES: Takes about 60 seconds to run. Log is about 1 MB compressed.
+#NOTES: Consider running this on a Synopsys Detect client host, Black Duck host, Black Duck or other container, Jenkins host, Jenkins job shell script, alternate sides of proxies and firewalls, etc.
 
-#USAGE: Edit below, then: time bash SnpsSigSup_TestConnectivity.bash 2>&1 | gzip -9 > /tmp/SnpsSigSup_TestConnectivity.bash_$(hostname -f)_$(date --utc +%F_%TZ_%a).out.gz  ^C
+#USAGE: Edit CONFIGs below, then: time bash SnpsSigSup_TestConnectivity.bash 2>&1 | gzip -9 > /tmp/SnpsSigSup_TestConnectivity.bash_$(hostname -f)_$(date --utc +%F_%TZ_%a).out.gz
+#USAGE: time bash SynopsysScripts/util/SnpsSigSup_TestConnectivity.bash 2>&1 | less -inRF
+#USAGE: Send output file to Synopsys Software Integrity Group Support team for review. 
+
 
 #CONFIG
-#export SPRING_APPLICATION_JSON='{"blackduck.url":"https://127.0.0.1:443","blackduck.api.token":"ZTAxYjg2YjYtMDZhOC00M2VmLThmYmUtMzUxOTJlZjZkZDdkOjU3YjA0ZDIwLWMzN2YtNDE3YS04ZTE0LTJiNDM2MjAxM2JjZA=="}'
-HOST_URL=https://sup-pjalajas-hub.dc1.lan  # with http protocol, no trailing slash
+TEST_HOST_PROTOCOL="https://" # for detect and curl, like https://
+TEST_HOST=sup-pjalajas-hub.dc1.lan  # without protocol, no trailing slash
+TEST_HOST_PORT=443 # for openssl
+JAVAX_D="-Djavax.net.debug=all" # lighter option:  -Djavax.net.debug=ssl,handshake  
+  #See:  https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#Debug
+BLACKDUCK_USERNAME=sysadmin
+BLACKDUCK_PASSWORD=blackduck
+BLACKDUCK_TRUST_CERTS=false # start with false (more secure), then change to true if needed
+CURL_INSECURE="" # start with empty string (more secure), then change to "--insecure" if needed
 
 
 #MAIN
-#lighter option:  -Djavax.net.debug=ssl,handshake 
 ( \
-  JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all " \
+  echo Running detect...
+  JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} ${JAVAX_D}" \
   bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
-    --blackduck.url=${HOST_URL} \
-    --blackduck.username='sysadmin' \
-    --blackduck.password='blackduck' \
+    --blackduck.url=${TEST_HOST_PROTOCOL}${TEST_HOST} \
+    --blackduck.username="${BLACKDUCK_USERNAME}" \
+    --blackduck.password="${BLACKDUCK_PASSWORD}" \
     --detect.test.connection \
-    --blackduck.trust.cert='true' \
+    --blackduck.trust.cert="${BLACKDUCK_TRUST_CERTS}" \
     --logging.level.com.synopsys.integration=TRACE 2>&1 ; 
   echo ;
-  curl --trace-ascii - -i -vvvv -D- ${HOST_URL} 2>&1 ;
+  echo Running curl...
+  curl ${CURL_INSECURE} --trace-ascii - -i -D- ${TEST_HOST_PROTOCOL}${TEST_HOST} | cat ;
   echo ;
-  echo true | openssl s_client -debug -connect $HOST_URL:443 -prexit -status -msg -debug 2>&1 ; \
+  echo Running openssl...
+  echo true | openssl s_client -debug -connect ${TEST_HOST}:${TEST_HOST_PORT} -prexit -status -msg -debug 2>&1 ; \
 ) 2>&1 | \
 while read line 
 do
