@@ -4,7 +4,7 @@
 #DATE: 2020-12-09
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
 #SUPPORT: https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
-#VERSION: 2012092315Z pj clean up for public consumption
+#VERSION: 2012100102Z # pj add server cert fingerprint to detect transparent proxy
 
 #PURPOSE: To test, among other things, Synopsys Detect connectivity to Black Duck server, etc 
 
@@ -15,6 +15,9 @@
 #USAGE: Edit CONFIGs below, then: time bash SnpsSigSup_TestConnectivity.bash 2>&1 | gzip -9 > /tmp/SnpsSigSup_TestConnectivity.bash_$(hostname -f)_$(date --utc +%F_%TZ_%a).out.gz
 #USAGE: time bash SynopsysScripts/util/SnpsSigSup_TestConnectivity.bash 2>&1 | less -inRF
 #USAGE: Send output file to Synopsys Software Integrity Group Support team for review. 
+
+#TODO
+#get server cert fingerprint to detect transparent proxy
 
 
 #CONFIG
@@ -30,7 +33,7 @@ CURL_INSECURE="" # start with empty string (more secure), then change to "--inse
 
 
 #MAIN
-( \
+( 
   echo Running detect...
   JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} ${JAVAX_D}" \
   bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
@@ -45,7 +48,10 @@ CURL_INSECURE="" # start with empty string (more secure), then change to "--inse
   curl ${CURL_INSECURE} --trace-ascii - -i -D- ${TEST_HOST_PROTOCOL}${TEST_HOST} | cat ;
   echo ;
   echo Running openssl...
-  echo true | openssl s_client -debug -connect ${TEST_HOST}:${TEST_HOST_PORT} -prexit -status -msg -debug 2>&1 ; \
+  echo true | openssl s_client -debug -connect ${TEST_HOST}:${TEST_HOST_PORT} -prexit -status -msg -debug 2>&1 ; 
+  #VERSION: 2012100102Z # pj add server cert fingerprint to detect transparent proxy
+  for DIGEST in "" "-SHA1" "-SHA256" ; do echo -n | openssl s_client -connect sig-repo.synopsys.com:443 2>&1 | openssl x509 ${DIGEST} -fingerprint -noout ; done | sort -u ;
+  echo
 ) 2>&1 | \
 while read line 
 do
@@ -54,3 +60,10 @@ done
 
 #One liner exaample, excludes curl, openssl tests:  
 #JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all " bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) --blackduck.url='https://sup-pjalajas-hub.dc1.lan' --blackduck.username='sysadmin' --blackduck.password='blackduck' --detect.test.connection --blackduck.trust.cert='false' --logging.level.com.synopsys.integration=TRACE 
+
+exit
+
+#REFERENCE
+: '
+
+'
