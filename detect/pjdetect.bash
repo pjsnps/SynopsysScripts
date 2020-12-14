@@ -3,7 +3,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2019-09-19, 2020-11-14
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2011142057Z
+#VERSION: 2012101922Z pj customer n huge docker, offline, split
 #SUPPORT: TODO
 
 #PURPOSE: To make test scanning with Detect easier. 
@@ -72,13 +72,13 @@ export SYNOPSYS_SKIP_PHONE_HOME=true
 export DETECT_SKIP_PHONE_HOME=true   # one of these is old
 
 
-#env
+env
 date
 date --utc
 hostname -f 
 echo $HOME
 pwd
-whoami
+#whoami # in env output
 #ip addr
 #ip link
 vmstat -w
@@ -162,7 +162,8 @@ find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100
 
 
 #MAIN COMMAND, but EDIT _many_ of these options as needed for your testing.  See messy bone yard below for command line switches.
-
+unset $DETECTSOURCEPATH
+unset $DETECTSOURCEPATHMOD
 bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.url='https://sup-pjalajas-hub.dc1.lan' \
     --blackduck.trust.cert='true' \
@@ -170,20 +171,14 @@ bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.password='blackduck' \
     --detect.cleanup='false' \
 \
-    --detect.project.name="PN_00825119_1209182325Z" \
-    --detect.project.version.name='PVN_1209182325Z' \
+    --detect.docker.tar="/home/pjalajas/dev/hub/test/projects/cust/n/00825119/sc-fluentd-kubernetes-daemonset_v1.11.4-debian-elasticsearch7-1.0.tar" \
+    --detect.project.name="PN_00825119_12101930Z" \
+    --detect.project.version.name='PVN_12101930Z' \
 \
-    --detect.source.path="${DETECTSOURCEPATHMOD}" \
-    --detect.docker.image="fluent/fluentd-kubernetes-daemonset:v1.11.5-debian-cloudwatch-1.0" \
+    --detect.project.version.notes="$(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
 \
-    --detect.project.version.notes="$(echo "${DETECTSOURCEPATHMOD}")\ $(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
+    --detect.blackduck.signature.scanner.dry.run='true' \
 \
-    --blackduck.offline.mode='false' \
-    --detect.blackduck.signature.scanner.dry.run='false' \
-\
-    --detect.detector.search.depth=200 \
-    --detect.detector.search.continue=true \
-    --logging.level.detect='TRACE' \
 \
 
 
@@ -191,7 +186,14 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
-
+    --detect.project.version.notes="$(echo "${DETECTSOURCEPATHMOD}")\ $(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
+    --blackduck.offline.mode='false' \
+    --logging.level.detect='TRACE' \
+    --detect.detector.search.continue=true \
+    --detect.detector.search.depth=200 \
+    --detect.source.path="${DETECTSOURCEPATHMOD}" \
+\
+    --detect.docker.image="fluent/fluentd-kubernetes-daemonset:v1.11.5-debian-cloudwatch-1.0" \
     --detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
     --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
     --detect.tools.excluded=SIGNATURE_SCAN \
