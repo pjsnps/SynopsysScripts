@@ -133,10 +133,12 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, 
 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/multiexpanded/tomtiger5" 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/" # expanded, 6.7 GB, 21 versions, 497,293 files       [pjalajas@sup-pjalajas-hub test]$ du -sh /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ 6.7G    /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -maxdepth 1 -type d -iname "*.exp" | wc -l 21 [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -type f | wc -l 497293
-DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119/fluentd-kubernetes-daemonset_v1.11.5-debian-cloudwatch-1.0.tar" # sig scans, but not docker scan     --detect.docker.image
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119"
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
+
+
 DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the last one set above (command line option takes precedence).
 echo Printing some of source tree to compare apples... 
 find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100 
@@ -162,22 +164,27 @@ find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100
 
 
 #MAIN COMMAND, but EDIT _many_ of these options as needed for your testing.  See messy bone yard below for command line switches.
-unset $DETECTSOURCEPATH
-unset $DETECTSOURCEPATHMOD
+#https://access.redhat.com/solutions/973783   
+#unset DETECTSOURCEPATH
+#unset DETECTSOURCEPATHMOD
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all " \
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=ssl,handshake " \
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack " \
+JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts" \
 bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
-    --blackduck.url='https://sup-pjalajas-hub.dc1.lan' \
-    --blackduck.trust.cert='true' \
+    --blackduck.url='https://webserver' \
+    --blackduck.trust.cert='false' \
     --blackduck.username='sysadmin' \
     --blackduck.password='blackduck' \
     --detect.cleanup='false' \
 \
-    --detect.docker.tar="/home/pjalajas/dev/hub/test/projects/cust/n/00825119/sc-fluentd-kubernetes-daemonset_v1.11.4-debian-elasticsearch7-1.0.tar" \
-    --detect.project.name="PN_00825119_12101930Z" \
-    --detect.project.version.name='PVN_12101930Z' \
-\
+    --detect.source.path="${DETECTSOURCEPATHMOD}" \
+    --detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
+    --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
     --detect.project.version.notes="$(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
 \
-    --detect.blackduck.signature.scanner.dry.run='true' \
+    --detect.blackduck.signature.scanner.dry.run='false' \
+    --logging.level.com.synopsys.integration=TRACE \
 \
 \
 
@@ -186,6 +193,42 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
+    --detect.diagnostic \
+https://github.com/blackducksoftware/synopsys-detect/blob/8a9f5da4ca1d43182f46e2a90449e34b82681b51/src/main/resources/application.properties
+
+https://github.com/blackducksoftware/synopsys-detect/search?p=1&q=%22logging.level%22
+
+Norman Ng Pete Jalajas  Though it's not obvious (or simple), log message formatting (including date format) is actually under user control. Detect uses Spring Boot logging, which means you can control log message format by setting (on the Detect command line, for example) Spring Boot properties like logging.pattern.console. More specifically, Detect uses Spring Boot's default Logback setup, which in turn uses java's SimpleDateFormat date format specifiers.
+
+If you need details, these doc sets apply (because these are the libraries involved in Detect logging):
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-logging
+http://logback.qos.ch/manual/layouts.html
+https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html
+
+If you want to change the date format:
+1. Read https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html to figure out the date format you want.
+2. When running Detect, set the logging.pattern.console property.
+
+Detect's default value for logging.pattern.console is:
+
+%d{yyyy-MM-dd HH:mm:ss} ${LOG_LEVEL_PATTERN:%-6p}[%thread] %clr(---){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}
+If you simply wanted to add the timezone, you could add "z" to the date format, resulting in:
+
+%d{yyyy-MM-dd HH:mm:ss z} ${LOG_LEVEL_PATTERN:%-6p}[%thread] %clr(---){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}
+This is a little easier to do if you run the Detect .jar directly:
+
+java -jar synopsys-detect-6.7.0.jar --logging.pattern.console='%d{yyyy-MM-dd HH:mm:ss z} ${LOG_LEVEL_PATTERN:%-6p}[%thread] %clr(---){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}'
+Quoting/Escaping is complicated by the scripts. To do the same thing using the bash script:
+
+./detect.sh --logging.pattern.console=\"%d{yyyy-MM-dd HH:mm:ss z} \\\${LOG_LEVEL_PATTERN:%-6p}[%thread] %clr\(---\){faint} %m%n\\\${LOG_EXCEPTION_CONVERSION_WORD:%wEx}\"
+All that said, I think the request to add timezone to the default is worth considering, so we'll triage this at the next triage meeting. I think we should also consider adding info like the above to the Detect doc.
+
+'
+
+
+
+: '
+    --detect.diagnostic \   # boolean, so =true is not required
     --detect.project.version.notes="$(echo "${DETECTSOURCEPATHMOD}")\ $(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
     --blackduck.offline.mode='false' \
     --logging.level.detect='TRACE' \
@@ -369,8 +412,8 @@ Work:
 /home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164/ignoreme/commons-lang-2.6.jar
     --detect.detector.search.depth=10 \
     --detect.blackduck.signature.scanner.exclusion.pattern.search.depth=10 \
-    --#detect.blackduck.signature.scanner.arguments='\ --debug\ ' \
-    --#detect.blackduck.signature.scanner.arguments='\ --debug\  do not use two ....arguments switches, fails with obscure detect version error ' \
+--#detect.blackduck.signature.scanner.arguments='\ --debug\ ' \
+--#detect.blackduck.signature.scanner.arguments='\ --debug\  do not use two ....arguments switches, fails with obscure detect version error ' \
     --#WORKS: detect.blackduck.signature.scanner.arguments="\ --debug\ --exclude-from=${HOME}/config/blackduck/ignore\ " \
     extremely! large npm (.js) projects:  https://gist.github.com/anvaka/8e8fa57c7ee1350e3491#file-02-with-most-dependencies-md
     7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
