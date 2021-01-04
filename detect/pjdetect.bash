@@ -72,12 +72,12 @@ export SYNOPSYS_SKIP_PHONE_HOME=true
 export DETECT_SKIP_PHONE_HOME=true   # one of these is old
 
 
-env
+#env # do later, after other settings are set
 date
 date --utc
 hostname -f 
-echo $HOME
-pwd
+echo $HOME  # in env?
+pwd  # in env?
 #whoami # in env output
 #ip addr
 #ip link
@@ -118,8 +118,6 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/synopsys-detect
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00816607"
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, jars only, see also jsjam for huge javascript project #7900 jars:  --detect.source.path='/home/pjalajas/Documents/dev/hub/test/projects/moab' \
-
-
 #parallel du -sh "{}" ::: ls projects/multiexpanded/* | sort -k1hr | head
 #27G     projects/multiexpanded/tomtiger27
 #9.9G    projects/multiexpanded/tomtiger10
@@ -130,7 +128,6 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/moab"  # huge, 
 #5.6G    projects/multiexpanded/monkeyfist5
 #5.1G    projects/multiexpanded/steelstruts5
 #5.1G    projects/multiexpanded/tomtiger5
-
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/multiexpanded/tomtiger5" 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/" # expanded, 6.7 GB, 21 versions, 497,293 files       [pjalajas@sup-pjalajas-hub test]$ du -sh /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ 6.7G    /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -maxdepth 1 -type d -iname "*.exp" | wc -l 21 [pjalajas@sup-pjalajas-hub test]$ find /home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/go-gitea/gitea/ -type f | wc -l 497293
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
@@ -170,8 +167,38 @@ find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100
 #JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all " \
 #JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=ssl,handshake " \
 #JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack " \
-JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts" \
-bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
+echo
+#export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:~/.local/bin:~/bin:/opt/gradle/gradle-6.7.1/bin"
+export JAVA_HOME=/home/pjalajas/Documents/dev/ssl/apache-hc/httpcomponents-client-4.3.5/examples/org/apache/http/examples/client/jdk-11.0.2
+export PATH=/home/pjalajas/Documents/dev/ssl/apache-hc/httpcomponents-client-4.3.5/examples/org/apache/http/examples/client/jdk-11.0.2/bin:$PATH ; 
+echo
+echo PATH:
+echo $PATH
+echo 
+echo which java:
+which java ; 
+echo
+echo java -version
+#echo "java version : $(java -version)"
+java -version
+echo
+#keytool -list -keystore /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts -storepass changeit
+#echo
+env
+echo
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djdk.security.allowNonCaAnchor=true -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts" \
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djdk.security.allowNonCaAnchor=true -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts" \
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djdk.security.allowNonCaAnchor=true -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_root_webserver_socat" \
+#ROOT cert only:
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djdk.security.allowNonCaAnchor=true -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_nginx_root_only" \
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_nginx_root_only" \
+JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all "
+JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djava.security.debug=all "
+JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_root_webserver_socat " 
+echo JAVA_TOOL_OPTIONS
+echo "$JAVA_TOOL_OPTIONS"
+echo
+JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS" bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
     --blackduck.url='https://webserver' \
     --blackduck.trust.cert='false' \
     --blackduck.username='sysadmin' \
@@ -193,6 +220,10 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
+    --detect.diagnostic \
+    --blackduck.url='https://hub-webserver' \    <-- not in hub server cert SAN DNS, so it fails
+    --detect.tools.excluded=SIGNATURE_SCAN \
+    --blackduck.url='https://webserver' \        <--- this works, as long as nginx root.crt is in truststore used by Detect
     --detect.diagnostic \
 https://github.com/blackducksoftware/synopsys-detect/blob/8a9f5da4ca1d43182f46e2a90449e34b82681b51/src/main/resources/application.properties
 
