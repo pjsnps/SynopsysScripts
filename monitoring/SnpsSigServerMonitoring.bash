@@ -1,3 +1,5 @@
+echo "2021-01-06 moved weeks ago to SnpsSigSup_ServerMonitor.bash"
+exit
 #!/usr/bin/bash
 #SnpsSigServerMonitoring.bash
 #DATE: 2019-06-06, 2020-08-27
