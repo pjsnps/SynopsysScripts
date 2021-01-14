@@ -134,7 +134,8 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/g
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119/fluentd-kubernetes-daemonset_v1.11.5-debian-cloudwatch-1.0.tar" # sig scans, but not docker scan     --detect.docker.image
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119"
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
-
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/zlib-1.2.11" # clang c/c++ .c .h customer 788092
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/cust/h1/consul-master"
 
 DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the last one set above (command line option takes precedence).
 echo Printing some of source tree to compare apples... 
@@ -169,8 +170,8 @@ find "${DETECTSOURCEPATHMOD}" | cut -c1-1000 | head -n 100
 #JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager -Djava.security.debug=access:stack " \
 echo
 #export PATH="/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:~/.local/bin:~/bin:/opt/gradle/gradle-6.7.1/bin"
-export JAVA_HOME=/home/pjalajas/Documents/dev/ssl/apache-hc/httpcomponents-client-4.3.5/examples/org/apache/http/examples/client/jdk-11.0.2
-export PATH=/home/pjalajas/Documents/dev/ssl/apache-hc/httpcomponents-client-4.3.5/examples/org/apache/http/examples/client/jdk-11.0.2/bin:$PATH ; 
+#export JAVA_HOME=/home/pjalajas/Documents/dev/ssl/apache-hc/httpcomponents-client-4.3.5/examples/org/apache/http/examples/client/jdk-11.0.2
+#export PATH=/home/pjalajas/Documents/dev/ssl/apache-hc/httpcomponents-client-4.3.5/examples/org/apache/http/examples/client/jdk-11.0.2/bin:$PATH ; 
 echo
 echo PATH:
 echo $PATH
@@ -192,26 +193,29 @@ echo
 #ROOT cert only:
 #JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djdk.security.allowNonCaAnchor=true -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_nginx_root_only" \
 #JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all -Djava.security.debug=all -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_nginx_root_only" \
-JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all "
-JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djava.security.debug=all "
-JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_root_webserver_socat " 
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.debug=all "
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djava.security.debug=all "
+#JAVA_TOOL_OPTIONS=" ${JAVA_TOOL_OPTIONS} -Djavax.net.ssl.trustStore=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts_root_webserver_socat " 
+unset JAVA_TOOL_OPTIONS
 echo JAVA_TOOL_OPTIONS
 echo "$JAVA_TOOL_OPTIONS"
 echo
+    #--blackduck.url='https://webserver' \
 JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS" bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
-    --blackduck.url='https://webserver' \
-    --blackduck.trust.cert='false' \
+    --blackduck.url='https://sup-pjalajas-hub.dc1.lan' \
+    --blackduck.trust.cert='true' \
     --blackduck.username='sysadmin' \
     --blackduck.password='blackduck' \
-    --detect.cleanup='false' \
 \
     --detect.source.path="${DETECTSOURCEPATHMOD}" \
     --detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
     --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
     --detect.project.version.notes="$(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
 \
-    --detect.blackduck.signature.scanner.dry.run='false' \
+    --detect.included.detector.types=GO_MOD \
+    --detect.tools=DETECTOR \
     --logging.level.com.synopsys.integration=TRACE \
+    --detect.detector.search.depth=200 \
 \
 \
 
@@ -220,6 +224,12 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
+    --detect.detector.buildless=false \
+    --detect.detector.search.depth=15 \
+    --logging.level.com.synopsys.integration=TRACE \
+    --detect.diagnostic.extended \
+    --detect.blackduck.signature.scanner.dry.run='false' \
+    --detect.cleanup='false' \
     --detect.diagnostic \
     --blackduck.url='https://hub-webserver' \    <-- not in hub server cert SAN DNS, so it fails
     --detect.tools.excluded=SIGNATURE_SCAN \
@@ -581,7 +591,6 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/pyriscope"   # 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/seamonkey"   # kind of an internal reference/ 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/steelstruts"   # huge
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/tomtiger"  # 
-DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/zlib-1.2.11"  # 
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/zlib-1.2.11" # clang c/c++ .c .h customer 788092
 DETECTSOURCEPATH="/home/pjalajas/node_modules/bootstrap-sortable/"  # ??? 
     --detect.tools.excluded=SIGNATURE_SCAN --detect.detector.search.depth=3 --detect.python.python3=true --detect.detector.search.exclusion.defaults=true --detect.pip.requirements.path=${DETECTSOURCEPATH}/requirements.txt \
