@@ -1,9 +1,10 @@
 #!/bin/bash
-#SynopsysGatherServerSpecs_202007.bash
+#SnpsSigSup_GetSpecs.bash
 #pjalajas@synopsys.com
 #License SPDX Apache-2.0
-#Version 2008141949Z # pj enable some Protex-specifics, not tested. 
-#grepvcksum: 3483071372 9558 
+#Version 2101140034Z 
+#grepvcksum: 
+#CHANGELOG: 2101140034Z combine from old script
 
 #To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script.
 #Generally quite safe, even when run as root.  
@@ -11,7 +12,7 @@
 
 #USAGE: Needs lots of work.  A proof of concept.  Suggestions welcome. 
 #USAGE: Edit CONFIGs, then:
-#USAGE: nice time sudo ./SynopsysGatherServerSpecs_202007.bash |& gzip -9 > /tmp/SynopsysGatherServerSpecs_202007.bash_$(date --utc +%Y%m%d%H%M%SZ%a)_$(hostname -f).out.gz 
+#USAGE: nice time sudo SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_$(date --utc +%Y%m%d%H%M%SZ%a)_$(hostname -f).out.gz 
 #USAGE: takes maybe 10 minutes to run.
 #USAGE: May need to swap "nice time" to "time nice" or remove nice from command line.
 #USAGE: zgrep "not found" $(ls -1rt /tmp/SynopsysGatherServerSpecs.*gz) to find any missing commands you may wish to install.

@@ -3,12 +3,14 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2101140006Z
+#VERSION: 2101140304Z
 #GREPVCKSUM: TODO 
+#CHANGELONG: 2101140304Z rewrite, simplify (try), remove legacy Suite, add docker.
 
 #PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
 #REQUIREMENTS
+#TODO
 #lspci: in package pcitutils
 
 usage() {  
@@ -18,9 +20,9 @@ usage() {
     --debug -d debug mode (set -x)
     Needs lots of work.  A proof of concept.  Suggestions welcome. 
     Edit CONFIGs, then:
-    sudo ./SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f).out.gz 
+    sudo ./SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f)_\$(id -un).out.gz 
     or, like:
-    sudo ./SnpsSigSup_GetSpecs.bash |& tee /dev/tty |& gzip -9 > ./log/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f).out.gz
+    sudo ./SnpsSigSup_GetSpecs.bash |& tee /dev/tty |& gzip -9 > ./log/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f)_$(id -un).out.gz
 
     Takes a minute or so to run.
     Run zgrep "not found" \$(ls -1rt /tmp/SnpsSigSup_GetSpecs.bash*gz | tail -n 1) to find any missing commands you may wish to install.
@@ -68,11 +70,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 #CONFIG
 
 #TODO these first few are broken:
-#BDAPPDIR=hub # protexIP #CodeCenter # hub 
-BDAPPDIR=protexIP # protexIP #CodeCenter hub 
-BDAPPPATH="/opt/blackduck/${BDAPPDIR}"
-TOMCATDIR="/opt/blackduck/${BDAPPDIR}/tomcat"
-#For the following, search this script for DFGREPFIXME and manually enter your greps as desired
+#For the following, to clean up "df" output, search this script for DFGREPFIXME and manually enter your greps as desired
 #mMountPointFilterIn='.*' ;  # passed into grep 
 #mMountPointFilterOut=" -e ChangeMe -e docker -e overlay " ;  # passed into grep -v ...
 
@@ -81,179 +79,214 @@ TOMCATDIR="/opt/blackduck/${BDAPPDIR}/tomcat"
 echo
 echo New script, lightly tested, lots of bugs and errors will be thrown.  Please send issues and suggestions to pjalajas@synopsys.com, thanks!
 echo
-date 
-date --utc
-id -a
-pwd
-
+echo "date : $(date)" 
+echo "date --utc : $(date --utc)"
+echo "hostname -f : $(hostname -f)"
+echo "user and their groups running script : $(id -a)"
+echo "pwd : $(pwd)"
+echo
+echo "script name : $0"
+#grep [V]ersion $0
+echo "script VERSION : $(grep ^\#VERSION $0)"
+echo "script md5sum : $(md5sum $0)"
+echo "script cksum : $(grep -i -v grepvcksum $0 | cksum)"
+echo
 echo
 echo Running in shell...
 #Credit: https://askubuntu.com/a/1022440
 #Keep multiple in case of oddities
-ps -p "$$"
-sh -c 'ps -p $$ -o ppid=' | xargs ps -o cmd= -p #-bash
+ps -p "$$" 
+sh -c 'ps -p $$ -o ppid=' | xargs ps -o cmd= -p #-bash 
 sh -c 'ps -p $$ -o ppid=' | xargs -i readlink -f /proc/\{\}/exe #/bin/bash
 
-echo
-echo $0
-grep [V]ersion $0
-md5sum $0
-grep -i -v grepvcksum $0 | cksum
-echo
-
-hostname -f
-ip -stats -detail addr 
-ip -stats -detail link
-#echo $(curl -s http://whatismyip.akamai.com/)
-
-echo
-#echo \$BDAPPPATH=$BDAPPPATH # /opt/blackduck/protexIP
-#echo \$TOMCATDIR=$TOMCATDIR # /opt/blackduck/protexIP/tomcat
-#BDUSER=$(grep -m 1 -e "bds.\(protexip\|codecenter\)" -e blckdck /etc/passwd | cut -d\: -f1) # bds-protexip
-#echo \$BDUSER=$BDUSER
-BDHOME=$(grep -m 1 -e "bds.\(protexip\|codecenter\)" -e blckdck /etc/passwd | cut -d\: -f6) # /var/lib/bds-protexip
-echo \$BDHOME=$BDHOME
-PGDIR=${BDHOME}/postgresql # /var/lib/bds-protexip/postgresql
-echo \$PGDIR=${PGDIR}
 echo
 
 #MAIN
 
+ip -stats -detail addr | while read line ; do echo "ip stats detail addr : $line" ; done
+echo
+ip -stats -detail link | while read line ; do echo "ip stats detail link : $line" ; done
+
+#TODO?:  echo $(curl -s http://whatismyip.akamai.com/)
+
+echo
+
+
 #TODO: torn whether to scrunch the output into single lines (no quotes around $(), or keep the output multi-line (with quotes), like java -version and free -g, etc.
-echo -e uname -a : "\n$(uname -a)"
+echo -e "uname -a : $(uname -a)"
 echo
-echo -e lsb_release : "\n$(lsb_release -a)"
+echo -e "lsb_release : $(lsb_release -a)"
 echo
-echo -e cat /etc/release : "\n$(cat /etc/*release* 2>/dev/null | sort -u)"
+grep -H ".*" /etc/*release* 2>/dev/null | sort -u | while read line ; do echo "grep .* /etc/*release* : $line" ; done
 echo
-echo -e id.txt : "\n$(cat ${BDAPPPATH}/id.txt)"
+echo -e "nproc : $(nproc)"
 echo
-echo -e java version : "\n$(${BDAPPPATH}/lib/jre/bin/java -version 2>&1)"
-echo
-echo -e java version : "\n$(java -version 2>&1)"
-echo
-#/opt/blackduck/protexIP/postgresql/bin/psql
-echo -e postgresql : "\n$(${BDAPPPATH}/postgresql/bin/psql --version)"
-echo
-echo -e postgresql : "\n$(psql --version)"
-echo
-echo -e nproc : "\n$(nproc)"
-echo
-echo -e cpuinfo summary : "\n$(grep -i -e cache -e bogomips -e model\ name /proc/cpuinfo | sort -u)"
+#echo -e cpuinfo summary : "\n$(grep -i -e cache -e bogomips -e model\ name /proc/cpuinfo | sort -u)"
+grep -i -e bogomips -e cache -e model\ name /proc/cpuinfo | sort -u | while read line ; do echo "cpuinfo cache bogomips model : $line" ; done
 echo
 #echo -e free -galt : "\n$(free -galt)"
 #echo
-echo -e free -glt : "\n$(free -glt)"
+#echo -e free -glt : "\n$(free -glt)"
+free -glt | while read line ; do echo "free -glt : $line" ; done 
 echo
-echo -e MemTotal /proc/meminfo : "\n$(grep MemTotal /proc/meminfo)"
+#echo -e MemTotal /proc/meminfo : "\n$(grep MemTotal /proc/meminfo)"
+grep MemTotal /proc/meminfo | while read line ; do echo "meminfo MemTotal : $line" ; done
 echo
-echo -e ulimit -a : "\n$(ulimit -a)" # TODO get same info for our app user (instead of sudo/root)
+#echo -e ulimit -a : "\n$(ulimit -a)" # TODO get same info for our app user (instead of sudo/root)
+ulimit -a | while read line ; do echo "ulimit -a : $line" ; done  # TODO get same info for our app user (instead of sudo/root)
+echo
+echo -e "java version : "$(java -version 2>&1)
+echo
+echo -e "postgresql : $(psql --version)"
+echo
+echo
+echo
+echo
 
+docker --version | while read line ; do echo "docker --version : $line" ; done
 echo
-echo -e ps tc 1: "\n$(ps auxww | grep -v grep | grep -e PID -e java.*${BDAPPPATH})"
 echo
-echo -e ps tc 2: "\n$(ps auxww | grep -v grep | grep -e PID -e java.*${BDAPPPATH} | tr ' ' '\n' | grep -v "^\s*$")"
+docker ps -a | while read line ; do echo "docker ps -a : $line" ; done 
 echo
-echo -e tomcat.start : "\n$(grep -v -e "^\s*#" -e "^\s*$" ${BDAPPPATH}/config/bds-protexIP-tomcat.start)"
 echo
-echo -e server.xml : "\n$(grep -v -e "^\s*#" -e "^\s*$" ${TOMCATDIR}/conf/server.xml | sed -re 's/(keystorePass=).*? /\1"__REDACTED__" /g')"
+docker info | while read line ; do echo "docker info : $line" ; done
 echo
-echo -e ps pg : "\n$(ps auxww | grep -v grep | grep -e PID -e postmaster -e postgres)"
 echo
-echo -e pg SHOW ALL : "\n$(${BDAPPPATH}/postgresql/bin/psql -U blackduck -d template1 -c "SHOW ALL")"
+docker stats --no-stream | while read line ; do echo "docker stats --no-stream : $line" ; done
 echo
-echo -e pg stat activity : "\n$(${BDAPPPATH}/postgresql/bin/psql -U blackduck -d template1 -c "SELECT * FROM pg_stat_activity ; ")"
 echo
-echo -e top cpu : "\n$(top -c -b -n 1 -w 512 -o %CPU | head -n 40)"
+#echo -e ps tc 1: "\n$(ps auxww | grep -v grep | grep -e PID -e java.*${BDAPPPATH})"
+ps auxww | grep -v grep | grep -e PID -e java | while read line ; do echo "ps java : $line" ; done
+echo
+echo
+#echo -e ps tc 2: "\n$(ps auxww | grep -v grep | grep -e PID -e java.*${BDAPPPATH} | tr ' ' '\n' | grep -v "^\s*$")"
+
+
+#echo -e ps pg : "\n$(ps auxww | grep -v grep | grep -e PID -e postmaster -e postgres)"
+echo
+echo
+echo
+ps auxww | grep -v grep | grep -e PID -e postmaster -e postgres | while read line ; do echo "ps postgres : $line" ; done
+echo
+echo
+echo
+#echo -e pg SHOW ALL : "\n$(${BDAPPPATH}/postgresql/bin/psql -U blackduck -d template1 -c "SHOW ALL")"
+#echo
+#echo -e pg stat activity : "\n$(${BDAPPPATH}/postgresql/bin/psql -U blackduck -d template1 -c "SELECT * FROM pg_stat_activity ; ")"
+echo
+
+#echo -e top cpu : "\n$(top -c -b -n 1 -w 512 -o %CPU | head -n 40)"
+top -c -b -n 1 -w 512 -o %CPU | head -n 40 | while read line ; do echo "top cpu : $line" ; done
+echo
+echo
 echo
 #no -a?:  echo -e top mem : "\n$(top -c -a -b -n 1 -w 512 | head -n 40)"
-echo -e top mem : "\n$(top -c -b -n 1 -w 512 -o %MEM | head -n 40)"
+#echo -e top mem : "\n$(top -c -b -n 1 -w 512 -o %MEM | head -n 40)"
+top -c -b -n 1 -w 512 -o %MEM | head -n 40 | while read line ; do echo "top mem : $line" ; done
 echo
-echo -e ps java threads : "\n$(ps -eLf | grep -v grep | grep -c "java.*/opt/blackduck/protexIP/tomcat")"
 echo
-echo -e oom-killer : "\n$(zgrep -i -e "invoked oom-killer" -e " killed " -e "dockerd.*oom" $(ls -1rt /var/log/messages* | tail -n 2))" | grep -v -e puppet -e ups
+echo
+
+#if set (not null, non-zero-length), then print
+unset TEXT ; TEXT="$(ls -1rt /var/log/messages* | tail -n 2 | while read msgfile ; do zgrep -H -i -e " killed " -e "invoked oom-killer" $msgfile | tail ; done | while read line ; do echo "oom kill : $line" ; done)" ; if [[ -n "$TEXT" ]] ; then echo "oom kill : $TEXT" ; else echo "oom kill : none" ; fi
 
 
-#moved to end, grepping all of them
-#echo
-#echo -e /proc/sys/vm/zone_reclaim_mode : "\n$(cat /proc/sys/vm/zone_reclaim_mode)"
-#echo
-#echo -e cat /sys/devices/system/cpu/cpuidle/current_driver : "\n$(cat /sys/devices/system/cpu/cpuidle/current_driver)"
-#echo
-#echo -e cat /proc/sys/kernel/sched_migration_cost : "\n$(cat /proc/sys/kernel/sched_migration_cost)"
-#echo
-#echo -e cat /proc/sys/kernel/sched_autogroup_enabled : "\n$(cat /proc/sys/kernel/sched_autogroup_enabled)"
-#echo
-#echo -e cat /sys/kernel/mm/transparent_hugepage/enabled : "\n$(cat /sys/kernel/mm/transparent_hugepage/enabled)"
-#echo
-#echo -e cat /sys/kernel/mm/transparent_hugepage/defrag : "\n$(cat /sys/kernel/mm/transparent_hugepage/defrag)"
-#echo
-#echo -e cat /proc/sys/vm/swappiness : "\n$(cat /proc/sys/vm/swappiness)"
-#echo
-#echo -e cat /sys/block/sda/queue/scheduler : "\n$(cat /sys/block/sda/queue/scheduler)"
-#echo
-#echo -e cat /sys/block/sda/device/timeout : "\n$(cat /sys/block/sda/device/timeout)"
 
 echo
-echo -e peak disk iops, wr_sec/s : "\n$(sar -d | tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
 echo
-echo -e peak disk iops, rd_sec/s : "\n$(sar -d | tr -s \  | cut -d\  -f5 | sort -k1nr | head)"
+#echo -e peak disk iops, wr_sec/s : "\n$(sar -d | tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
+sar -d | tr -s \  | cut -d\  -f6 | sort -k1nr | head | while read line ; do echo "sar peak iops wr_sec : $line" ; done
 echo
-echo -e peak disk iops, await : "\n$(sar -d | tr -s \  | cut -d\  -f9 | sort -k1nr | head)"
+#echo -e peak disk iops, rd_sec/s : "\n$(sar -d | tr -s \  | cut -d\  -f5 | sort -k1nr | head)"
+sar -d | tr -s \  | cut -d\  -f5 | sort -k1nr | head | while read line ; do echo "sar peak iops rd_sec : $line" ; done
 echo
-echo -e peak net, rxkB/s : "\n$(sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
+#echo -e peak disk iops, await : "\n$(sar -d | tr -s \  | cut -d\  -f9 | sort -k1nr | head)"
+sar -d | tr -s \  | cut -d\  -f9 | sort -k1nr | head | while read line ; do echo "sar peak iops await : $line" ; done
 echo
-echo -e peak net, txkB/s : "\n$(sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f7 | sort -k1nr | head)"
+#echo -e peak net, rxkB/s : "\n$(sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
+sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f6 | sort -k1nr | head | while read line ; do echo "sar peak net rxkB/s : $line" ; done
+echo
+#echo -e peak net, txkB/s : "\n$(sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f7 | sort -k1nr | head)"
+sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f7 | sort -k1nr | head | while read line ; do echo "sar peak net txkB/s : $line" ; done
+echo
+echo
+echo
+
+
+
+
 
 echo
-echo -e lspci : "\n$(lspci -nn)"
+#echo -e lspci : "\n$(lspci -nn)"
+lspci -nn | while read line ; do echo "lspci -nn : $line" ; done
+
 echo
-echo -e lscpu : "\n$(lscpu)"
+#echo -e lscpu : "\n$(lscpu)"
+lscpu | while read line ; do echo "lscpu : $line" ; done
 echo
 #echo -e lsblk : "\n$(lsblk)"
-echo -e lsblk : "\n$(lsblk --fs --topology)"
+#echo -e lsblk : "\n$(lsblk --fs --topology)"
+lsblk --fs --topology | while read line ; do echo "lsblk fs topo : $line" ; done
 echo
-echo -e lsblk rota: "\n$(lsblk -d -o name,rota)"
+#echo -e lsblk rota: "\n$(lsblk -d -o name,rota)"
+lsblk -d -o name,rota | while read line ; do echo "lsblk : $line" ; done
 echo
-echo -e lshw : "\n$(lshw -short -sanitize 2>/dev/null)"
+#echo -e lshw : "\n$(lshw -short -sanitize 2>/dev/null)"
+lshw -short -sanitize 2>/dev/null | while read line ; do echo "lshw short sani : $line" ; done
 echo
-echo -e lsmod : "\n$(lsmod)"
+#echo -e lsmod : "\n$(lsmod)"
+lsmod | while read line ; do echo "lsmod : $line" ; done
 echo
-echo -e mount : "\n$(mount)"
+#echo -e mount : "\n$(mount)"
+mount | while read line ; do echo "mount : $line" ; done
 echo
-echo -e df -hPT : "\n$(df -hPT)"
+#echo -e df -hPT : "\n$(df -hPT)"
+df -hPT | while read line ; do echo "df -hPT : $line" ; done
 echo
-echo -e vmstat -SM 5 3 : "\n$(vmstat -SM 5 3 )"
+#echo -e vmstat -SM 5 3 : "\n$(vmstat -SM 5 3 )"
+vmstat -SM 5 3 | while read line ; do echo "vmstat SM 5 3 : $line" ; done
 echo
-echo -e iostat -ytNmx 5 1 : "\n$(iostat -ytNmx 5 1)"
+#echo -e iostat -ytNmx 5 1 : "\n$(iostat -ytNmx 5 1)"
+iostat -ytNmx 5 1 | while read line ; do echo "iostat ytNmx 5 1 : $line" ; done
 echo
-echo -e iostat -ytmx 5 1 : "\n$(iostat -ytmx 5 1)"
+#echo -e iostat -ytmx 5 1 : "\n$(iostat -ytmx 5 1)"
+iostat -ytmx 5 1 | while read line ; do echo "iostat ytmx 5 1 : $line" ; done
 echo
 echo Put longer output after here...
 echo
-echo -e netstat -a : "\n$(netstat -a)"
+#echo -e netstat -a : "\n$(netstat -a)"
+netstat -a | while read line ; do echo "netstat -a : $line" ; done
 echo
 #too much:  echo -e sar -A : "\n$(sar -A)"
 #echo
 #echo -e dmesg : "\n$(dmesg) | strings"
-echo -e dmesg : "\n$(dmesg --decode --show-delta -T)"
+#echo -e dmesg : "\n$(dmesg --decode --show-delta -T)"
+dmesg --decode --show-delta -T | while read line ; do echo "dmesg decode delta T : $line" ; done
 echo
-echo -e sysctl -a : "\n$(sysctl -a 2>/dev/null)"
-echo
-
-echo
-env
+#echo -e sysctl -a : "\n$(sysctl -a 2>/dev/null)"
+sysctl -a 2>/dev/null | while read line ; do echo "sysctl -a : $line" ; done
 echo
 
-
 echo
-rpm -qa
+env | while read line ; do echo "env : $line" ; done
 echo
 
 
-grep -e bd -e black -e blck -e protex -e codecenter /etc/passwd
+echo
+rpm -qa | while read line ; do echo "rpm -qa : $line" ; done
 echo
 
+
+grep -e bd -e black -e blck -e protex -e codecenter /etc/passwd | while read line ; do echo "passwd : $line" ; done
+echo
+echo
+echo
+echo
+
+#journalctl --all --utc --output=verbose --unit=docker --since="$(date -d '1 hour ago' +%Y-%m-%d\ %H:%M:%S)" |& cat -A | while read line ; do echo "journalctl docker last hour : $line" ; done
+journalctl --all --utc --unit=docker --since="$(date -d '1 hour ago' +%Y-%m-%d\ %H:%M:%S)" |& cat -A | while read line ; do echo "journalctl docker last hour : $line" ; done
+
+exit
 
 echo EXPERIMENTAL
 echo
@@ -287,8 +320,8 @@ echo
 echo
 
 echo
-date
-date --utc
+date | while read line ; do echo "date : $line" ; done
+date --utc | while read line ; do echo "date --utc : $line" ; done
 echo Done $0.
 
 exit
