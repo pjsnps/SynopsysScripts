@@ -3,9 +3,9 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2101140304Z
+#VERSION: 2101140339Z
 #GREPVCKSUM: TODO 
-#CHANGELONG: 2101140304Z rewrite, simplify (try), remove legacy Suite, add docker.
+#CHANGES: re-order 
 
 #PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
@@ -22,7 +22,7 @@ usage() {
     Edit CONFIGs, then:
     sudo ./SnpsSigSup_GetSpecs.bash |& gzip -9 > /tmp/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f)_\$(id -un).out.gz 
     or, like:
-    sudo ./SnpsSigSup_GetSpecs.bash |& tee /dev/tty |& gzip -9 > ./log/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f)_$(id -un).out.gz
+    sudo ./SnpsSigSup_GetSpecs.bash |& tee /dev/tty |& gzip -9 > ./log/SnpsSigSup_GetSpecs.bash_\$(date --utc +%Y%m%d%H%M%SZ%a)_\$(hostname -f)_\$(id -un).out.gz
 
     Takes a minute or so to run.
     Run zgrep "not found" \$(ls -1rt /tmp/SnpsSigSup_GetSpecs.bash*gz | tail -n 1) to find any missing commands you may wish to install.
@@ -82,6 +82,7 @@ echo
 echo "date : $(date)" 
 echo "date --utc : $(date --utc)"
 echo "hostname -f : $(hostname -f)"
+#TODO?:  echo $(curl -s http://whatismyip.akamai.com/)
 echo "user and their groups running script : $(id -a)"
 echo "pwd : $(pwd)"
 echo
@@ -103,43 +104,92 @@ echo
 
 #MAIN
 
+echo
+grep -H ".*" /etc/*release* 2>/dev/null | sort -u | while read line ; do echo "grep .* /etc/*release* : $line" ; done
+echo
+echo -e "lsb_release : $(lsb_release -a)"
+echo
+echo -e "uname -a : $(uname -a)"
+echo
+echo -e "nproc : $(nproc)"
+echo
+grep -i -e bogomips -e cache -e model\ name /proc/cpuinfo | sort -u | while read line ; do echo "cpuinfo cache bogomips model : $line" ; done
+
+echo
+free -glt | while read line ; do echo "free -glt : $line" ; done 
+
+echo
+grep MemTotal /proc/meminfo | while read line ; do echo "meminfo MemTotal : $line" ; done
+
+echo
+df -hPT | while read line ; do echo "df -hPT : $line" ; done
+echo
+#echo -e lspci : "\n$(lspci -nn)"
+lspci -nn | while read line ; do echo "lspci -nn : $line" ; done
+
+echo
+#echo -e lscpu : "\n$(lscpu)"
+lscpu | while read line ; do echo "lscpu : $line" ; done
+echo
+#echo -e lsblk : "\n$(lsblk)"
+#echo -e lsblk : "\n$(lsblk --fs --topology)"
+lsblk --fs --topology | while read line ; do echo "lsblk fs topo : $line" ; done
+echo
+#echo -e lsblk rota: "\n$(lsblk -d -o name,rota)"
+lsblk -d -o name,rota | while read line ; do echo "lsblk : $line" ; done
+echo
+#echo -e lshw : "\n$(lshw -short -sanitize 2>/dev/null)"
+lshw -short -sanitize 2>/dev/null | while read line ; do echo "lshw short sani : $line" ; done
+echo
+#echo -e lsmod : "\n$(lsmod)"
+lsmod | while read line ; do echo "lsmod : $line" ; done
+echo
+#echo -e mount : "\n$(mount)"
+mount | while read line ; do echo "mount : $line" ; done
+echo
+#echo -e vmstat -SM 5 3 : "\n$(vmstat -SM 5 3 )"
+vmstat -SM 5 3 | while read line ; do echo "vmstat SM 5 3 : $line" ; done
+echo
+#echo -e iostat -ytNmx 5 1 : "\n$(iostat -ytNmx 5 1)"
+iostat -ytNmx 5 1 | while read line ; do echo "iostat ytNmx 5 1 : $line" ; done
+echo
+#echo -e iostat -ytmx 5 1 : "\n$(iostat -ytmx 5 1)"
+iostat -ytmx 5 1 | while read line ; do echo "iostat ytmx 5 1 : $line" ; done
+
+
+
+echo
+echo
+echo
 ip -stats -detail addr | while read line ; do echo "ip stats detail addr : $line" ; done
 echo
 ip -stats -detail link | while read line ; do echo "ip stats detail link : $line" ; done
+echo
+echo
+echo
 
-#TODO?:  echo $(curl -s http://whatismyip.akamai.com/)
 
 echo
 
 
 #TODO: torn whether to scrunch the output into single lines (no quotes around $(), or keep the output multi-line (with quotes), like java -version and free -g, etc.
-echo -e "uname -a : $(uname -a)"
-echo
-echo -e "lsb_release : $(lsb_release -a)"
-echo
-grep -H ".*" /etc/*release* 2>/dev/null | sort -u | while read line ; do echo "grep .* /etc/*release* : $line" ; done
-echo
-echo -e "nproc : $(nproc)"
-echo
-#echo -e cpuinfo summary : "\n$(grep -i -e cache -e bogomips -e model\ name /proc/cpuinfo | sort -u)"
-grep -i -e bogomips -e cache -e model\ name /proc/cpuinfo | sort -u | while read line ; do echo "cpuinfo cache bogomips model : $line" ; done
-echo
-#echo -e free -galt : "\n$(free -galt)"
-#echo
-#echo -e free -glt : "\n$(free -glt)"
-free -glt | while read line ; do echo "free -glt : $line" ; done 
-echo
-#echo -e MemTotal /proc/meminfo : "\n$(grep MemTotal /proc/meminfo)"
-grep MemTotal /proc/meminfo | while read line ; do echo "meminfo MemTotal : $line" ; done
 echo
 #echo -e ulimit -a : "\n$(ulimit -a)" # TODO get same info for our app user (instead of sudo/root)
 ulimit -a | while read line ; do echo "ulimit -a : $line" ; done  # TODO get same info for our app user (instead of sudo/root)
+
+
+
+
+
+
+
+echo
+echo
+echo
 echo
 echo -e "java version : "$(java -version 2>&1)
 echo
 echo -e "postgresql : $(psql --version)"
-echo
-echo
 echo
 echo
 
@@ -153,6 +203,9 @@ docker info | while read line ; do echo "docker info : $line" ; done
 echo
 echo
 docker stats --no-stream | while read line ; do echo "docker stats --no-stream : $line" ; done
+echo
+echo
+echo
 echo
 echo
 #echo -e ps tc 1: "\n$(ps auxww | grep -v grep | grep -e PID -e java.*${BDAPPPATH})"
@@ -216,41 +269,7 @@ echo
 
 
 
-echo
-#echo -e lspci : "\n$(lspci -nn)"
-lspci -nn | while read line ; do echo "lspci -nn : $line" ; done
 
-echo
-#echo -e lscpu : "\n$(lscpu)"
-lscpu | while read line ; do echo "lscpu : $line" ; done
-echo
-#echo -e lsblk : "\n$(lsblk)"
-#echo -e lsblk : "\n$(lsblk --fs --topology)"
-lsblk --fs --topology | while read line ; do echo "lsblk fs topo : $line" ; done
-echo
-#echo -e lsblk rota: "\n$(lsblk -d -o name,rota)"
-lsblk -d -o name,rota | while read line ; do echo "lsblk : $line" ; done
-echo
-#echo -e lshw : "\n$(lshw -short -sanitize 2>/dev/null)"
-lshw -short -sanitize 2>/dev/null | while read line ; do echo "lshw short sani : $line" ; done
-echo
-#echo -e lsmod : "\n$(lsmod)"
-lsmod | while read line ; do echo "lsmod : $line" ; done
-echo
-#echo -e mount : "\n$(mount)"
-mount | while read line ; do echo "mount : $line" ; done
-echo
-#echo -e df -hPT : "\n$(df -hPT)"
-df -hPT | while read line ; do echo "df -hPT : $line" ; done
-echo
-#echo -e vmstat -SM 5 3 : "\n$(vmstat -SM 5 3 )"
-vmstat -SM 5 3 | while read line ; do echo "vmstat SM 5 3 : $line" ; done
-echo
-#echo -e iostat -ytNmx 5 1 : "\n$(iostat -ytNmx 5 1)"
-iostat -ytNmx 5 1 | while read line ; do echo "iostat ytNmx 5 1 : $line" ; done
-echo
-#echo -e iostat -ytmx 5 1 : "\n$(iostat -ytmx 5 1)"
-iostat -ytmx 5 1 | while read line ; do echo "iostat ytmx 5 1 : $line" ; done
 echo
 echo Put longer output after here...
 echo
