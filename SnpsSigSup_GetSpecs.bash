@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2009281623Z
-#GREPVCKSUM:  3468261141 10197
+#VERSION: 2101140006Z
+#GREPVCKSUM: TODO 
 
 #PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
@@ -201,7 +201,7 @@ echo -e peak disk iops, rd_sec/s : "\n$(sar -d | tr -s \  | cut -d\  -f5 | sort 
 echo
 echo -e peak disk iops, await : "\n$(sar -d | tr -s \  | cut -d\  -f9 | sort -k1nr | head)"
 echo
-echo -e peak net, rxkB/s : "\n$(sar -n ALL | grep -v lo |  tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
+echo -e peak net, rxkB/s : "\n$(sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f6 | sort -k1nr | head)"
 echo
 echo -e peak net, txkB/s : "\n$(sar -n ALL | grep -v lo | tr -s \  | cut -d\  -f7 | sort -k1nr | head)"
 
@@ -233,8 +233,8 @@ echo Put longer output after here...
 echo
 echo -e netstat -a : "\n$(netstat -a)"
 echo
-echo -e sar -A : "\n$(sar -A)"
-echo
+#too much:  echo -e sar -A : "\n$(sar -A)"
+#echo
 #echo -e dmesg : "\n$(dmesg) | strings"
 echo -e dmesg : "\n$(dmesg --decode --show-delta -T)"
 echo
