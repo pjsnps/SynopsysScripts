@@ -3,9 +3,9 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/, https://www.synopsys.com/software-integrity/support.html
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2101140339Z
+#VERSION:  2101142337Z
 #GREPVCKSUM: TODO 
-#CHANGES: re-order 
+#CHANGES: systemctl show
 
 #PURPOSE:  To gather server specs for troubleshooting and baselining. Not intended for long-term monitoring and telemetry or gathering our application configs and logs--that's another script:  SnpsSigServerMonitoring.bash. 
 
@@ -285,7 +285,13 @@ echo
 #echo -e sysctl -a : "\n$(sysctl -a 2>/dev/null)"
 sysctl -a 2>/dev/null | while read line ; do echo "sysctl -a : $line" ; done
 echo
+echo
+systemctl show --property=Environment docker | while read line ; do echo "systemctl show env docker : $line" ; done
+echo
+echo
+systemctl show | while read line ; do echo "systemctl show all : $line" ; done
 
+echo
 echo
 env | while read line ; do echo "env : $line" ; done
 echo
@@ -304,8 +310,6 @@ echo
 
 #journalctl --all --utc --output=verbose --unit=docker --since="$(date -d '1 hour ago' +%Y-%m-%d\ %H:%M:%S)" |& cat -A | while read line ; do echo "journalctl docker last hour : $line" ; done
 journalctl --all --utc --unit=docker --since="$(date -d '1 hour ago' +%Y-%m-%d\ %H:%M:%S)" |& cat -A | while read line ; do echo "journalctl docker last hour : $line" ; done
-
-exit
 
 echo EXPERIMENTAL
 echo
@@ -337,7 +341,12 @@ echo
 #TODO too much info; maybe just do for PIDs of our major components: find /proc -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000
 #TODO hangs: find /sys  -type f | xargs -P$(nproc) grep --max-count=1000 -H ".*" |& cat -A |& cut -c1-1000 
 echo
+echo
+echo
 
+bonnie++ -u root |& while read line ; do echo "bonnie++ : $line" ; done
+echo
+echo
 echo
 date | while read line ; do echo "date : $line" ; done
 date --utc | while read line ; do echo "date --utc : $line" ; done
