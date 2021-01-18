@@ -2,8 +2,8 @@
 #SCRIPT: SnpsSigSup_RecursiveExpander.bash
 #AUTHOR: pjalajas@blackducksoftware.com, pjalajas@synopsys.com
 #DATE: 2016-02-12, 2020-10-23, 2020-11-11
-#VERSION:  2011231829Z
-#CHANGELOG: i2011231829Z try add ova (vmware; tar format)
+#VERSION:  2101181626Z
+#CHANGES:  pj add NOTE that expanded output is where the source is
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT:  https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
 
@@ -14,7 +14,7 @@
 
 #USAGE: bash SnpsSigSup_RecursiveExpander.bash workspace/30188-PROD
 
-#NOTES:  For each supported filename extension, script drills down into code tree and expands any such files it can see. For now, manually repeat until no more expansions performed (or tried).  
+#NOTES:  For each supported filename extension, script drills down into code tree and expands any such files it can see. For now, manually repeat until no more expansions performed (or tried).  Expanded output is where the source is, not in current directory (so you don't have to cd to the source dir).
 
 #TODO:  parallelize - done
 #CHANGELOG: 2011180228Z note re TODO to report missing requirements only after failing to process such an archive (but keep going). 
