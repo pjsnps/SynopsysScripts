@@ -56,7 +56,6 @@ unset XDG_CONFIG_HOME
 unset JAVA_TOOL_OPTIONS
 
 
-unset DETECT_LATEST_RELEASE_VERSION
 #export DETECT_LATEST_RELEASE_VERSION=4.4.1
 #export DETECT_LATEST_RELEASE_VERSION=6.0.0
 #export DETECT_LATEST_RELEASE_VERSION=5.4.0
@@ -65,6 +64,7 @@ unset DETECT_LATEST_RELEASE_VERSION
 #export DETECT_LATEST_RELEASE_VERSION=6.2.0
 #export DETECT_LATEST_RELEASE_VERSION=6.3.0  # 2020.4.1
 #Detect compatibility chart:  https://synopsys.atlassian.net/wiki/spaces/INTDOCS/pages/177799187/Black+Duck+Release+Compatibility
+unset DETECT_LATEST_RELEASE_VERSION
 
 #phone home phonehome; In a network where access to outside servers is limited, this mechanism may fail, and those failures may be visible in the log. This is a harmless failure; Synopsys Detect will continue to function normally.
 #To disable this mechanism, set the environment variable SYNOPSYS_SKIP_PHONE_HOME to true.
@@ -133,9 +133,9 @@ DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/pkgmgrs/github.com/GIT/g
 #Take source dir from command line first param $1 or from DETECTSOURCEPATH set immediately above.
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119/fluentd-kubernetes-daemonset_v1.11.5-debian-cloudwatch-1.0.tar" # sig scans, but not docker scan     --detect.docker.image
 DETECTSOURCEPATH="/home/pjalajas/dev/hub/test/projects/cust/n/00825119"
-DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/zlib-1.2.11" # clang c/c++ .c .h customer 788092
 DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/cust/h1/consul-master"
+DETECTSOURCEPATH="/home/pjalajas/Documents/dev/hub/test/projects/bcprov-jdk15on-164"   # small, fast, good for testing exclusions
 
 DETECTSOURCEPATHMOD="${1:-${DETECTSOURCEPATH}}" # if source path set in $1 in command line then use that, else use the last one set above (command line option takes precedence).
 echo Printing some of source tree to compare apples... 
@@ -200,21 +200,26 @@ unset JAVA_TOOL_OPTIONS
 echo JAVA_TOOL_OPTIONS
 echo "$JAVA_TOOL_OPTIONS"
 echo
+    #--detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
+    #--detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
+    #--detect.project.version.notes="$(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
+PN="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)"
+PVN="PVN_${PN}"
     #--blackduck.url='https://webserver' \
 JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS" bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
-    --blackduck.url='https://sup-pjalajas-hub.dc1.lan' \
+    --blackduck.url='https://sup-pjalajas-2.dc1.lan' \
     --blackduck.trust.cert='true' \
     --blackduck.username='sysadmin' \
     --blackduck.password='blackduck' \
 \
     --detect.source.path="${DETECTSOURCEPATHMOD}" \
-    --detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
-    --detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
-    --detect.project.version.notes="$(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
+    --detect.project.name="${PN}" \
+    --detect.project.version.name="${PVN}" \
+    --detect.project.version.notes="${PN}\ ${PVN}\ pjalajas@synopsys.com" \
 \
-    --detect.included.detector.types=GO_MOD \
-    --detect.tools=DETECTOR \
-    --logging.level.com.synopsys.integration=TRACE \
+    --detect.included.detector.types=ALL \
+    --detect.tools=ALL \
+    --logging.level.com.synopsys.integration=INFO \
     --detect.detector.search.depth=200 \
 \
 \
@@ -224,6 +229,8 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
+    --detect.included.detector.types=GO_MOD \
+    --detect.tools=DETECTOR \
     --detect.detector.buildless=false \
     --detect.detector.search.depth=15 \
     --logging.level.com.synopsys.integration=TRACE \
