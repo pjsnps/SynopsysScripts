@@ -3,7 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE:  2020-12-08
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2012082212Z pj initial
+#VERSION: 2101221254Z
+#CHANGELOG: add Uploading Analysis Files
 
 #USAGE: Edit CONFIGs, then:
 #USAGE: [pjalajas@sup-pjalajas-hub api]$ bash /home/pjalajas/dev/git/SynopsysScripts/hub/SnpsSigSup_BdTestApi.bash | jq -C | less -inRF            
@@ -73,13 +74,14 @@ BD_API_REQUEST="/api/codelocations/${codeLocationId}/latest-scan-summary"    #ap
 BD_API_REQUEST="/api/scan/${scanId}/bom-entries"  #  kbFilePaths, not project file paths
 
 
-############## start pairing requets and types here; copy from api doc request def, add $ to front of {}.
+############## start pairing requests and types here; copy from api doc request def, add $ to front of {}.
 #GET /api/projects/{projectId}/versions/{projectVersionId}/hierarchical-components Accept: application/vnd.blackducksoftware.bill-of-materials-6+json
 BD_API_REQUEST="/api/projects/${projectId}/versions/${projectVersionId}/hierarchical-components" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.bill-of-materials-6+json" #     "href": "https://sup-pjalajas-2.dc1.lan/api/projects/7d104f09-3273-448c-81dc-e33a7674da8f/versions/a145ed5a-a241-47a2-8ff7-2aa1a8fecb7b/hierarchical-components",  # returns null
 BD_API_REQUEST="/api/codelocations/${codeLocationId}" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.scan-4+json"
 BD_API_REQUEST="/api/codelocations/${codeLocationId}/scan-summaries" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.scan-4+json"  # "href": "https://sup-pjalajas-2.dc1.lan/api/scan/598cecc4-0a7e-46e9-96ba-5a63be41ccf1/bom-entries"
 
-
+############## start pairing methods, requests and types here; copy from api doc request def, add $ to front of {}.
+#POST /api/scan/data Accept: application/vnd.blackducksoftware.bdio+json Accept: application/ld+json
 
 
 
