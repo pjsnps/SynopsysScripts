@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE:  2020-12-08
 #LICENSE: SPDX Apache-2.0
-#VERSION: 2101221254Z
-#CHANGELOG: add Uploading Analysis Files
+#VERSION: 2101221704Z
+#CHANGELOG: notifications, method variable 
 
 #USAGE: Edit CONFIGs, then:
 #USAGE: [pjalajas@sup-pjalajas-hub api]$ bash /home/pjalajas/dev/git/SynopsysScripts/hub/SnpsSigSup_BdTestApi.bash | jq -C | less -inRF            
@@ -21,6 +21,7 @@ codeLocationId="15d3370b-3b88-4dbc-acdd-e7f86cca8ab5"  # application/vnd.blackdu
 
 #BD_TOKEN="ODcxYzA0OTAtNmQ4NC00NzhjLTk0MzctYzUwODJlNGMwOGY3OjMyYzk2ZWQ4LTIzZDYtNGVjNi1hZmIxLTNmYWQyZWUzYWNiOA=="
 BD_TOKEN="MTM3NWQ3Y2MtYTgyNS00ODBjLTkyNGItMzMzNjU0MmFmYzIwOjc4YzM2ZmMzLWYxZDktNDRlYy04ZGFhLTE1OTYwMDYxMjQ1Nw=="
+BD_TOKEN="ZWIyM2YzYjctYTlkOS00NjY3LThkZDktM2QxM2NhMTJhZjA0OjVkNThmMmQ3LTE0MmQtNDA0Zi1iM2YwLTNkNWRjYTM3MmM5YQ=="
 #BD_URL="https://sup-pjalajas-hub.dc1.lan"  # with httpx, no trailing slash
 BD_URL="https://sup-pjalajas-2.dc1.lan"  # with httpx, no trailing slash
 BD_API_TOKENS_AUTH="/api/tokens/authenticate"  # no trailing slash
@@ -82,27 +83,23 @@ BD_API_REQUEST="/api/codelocations/${codeLocationId}/scan-summaries" ; BD_API_RE
 
 ############## start pairing methods, requests and types here; copy from api doc request def, add $ to front of {}.
 #POST /api/scan/data Accept: application/vnd.blackducksoftware.bdio+json Accept: application/ld+json
-
-
-
-
-
+#GET /api/notifications Accept: application/vnd.blackducksoftware.notification-4+json
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/notifications" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.notification-4+json"
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/notifications" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.notification-4+json"
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/notifications?filter=notificationType:policy_override" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.notification-4+json"
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/notifications-filters?filterKey=notificationType" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.notification-4+json"  # Lists notificationType's
 
 # INIT
 
 
-
-
-
-
 #MAIN: ################
 
-
-echo $BD_API_REQUEST_CONTENT_TYPE
-echo $BD_API_REQUEST
+echo BD_API_METHOD=$BD_API_METHOD
+echo BD_API_REQUEST_CONTENT_TYPE=$BD_API_REQUEST_CONTENT_TYPE
+echo BD_API_REQUEST=$BD_API_REQUEST
 
 curl --silent --insecure \
-  --request GET \
+  --request $BD_API_METHOD \
   --header "Authorization: Bearer $(\
     curl --silent --insecure \
       --request POST \

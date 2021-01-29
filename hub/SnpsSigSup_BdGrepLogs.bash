@@ -4,9 +4,9 @@
 #AUTHOR: pjalajas@synopsys.com
 #SUPPORT: https://community.synopsys.com/s/ Software-integrity-support@synopsys.com
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
-#VERSION: 2101160304Z
+#VERSION: 2101251704Z
 #GREPVCKSUM: TODO 
-#CHANGELOG:  minor cleanup before committing
+#CHANGELOG: add TEXT_STRING, minor notes 
 
 #PURPOSE: Input lists of search term strings, output matching Synopsys Black Duck (Hub) container log records scans (scan, jobrunner, etc).  
 #A work in progress, works for me; suggestions welcome.
@@ -25,13 +25,29 @@
 export CUT_CHARS=2000 # to keep crazy long lines from flooding the output, used in echo $line | cut -c1-$CUT_CHARS
 export SINCE="2021-01-12T06:50:00"  # local time (not UTC) Date range of interest in docker container logs
 export UNTIL="2021-01-15T07:50:00"
+export SINCE="2021-01-26T11:00:00"  # local time (not UTC) Date range of interest in docker container logs
+export UNTIL="2021-01-26T12:00:00"
+export SINCE="6630m"  # local time (not UTC) Date range of interest in docker container logs
+export UNTIL="0m"
 
 #see "mstrings=" below for how these are echo'd together separated by newline.
 export TEST_UUID="b0a2079d-fa89-4b0f-a147-7a30c666a619"
+export TEST_UUID=""
+export TEST_UUID="137ad409-a122-49bf-80f7-dd514a22f6a2"
+export TEST_UUID="7d501697-1225-4756-ae77-f3438a89312c"
 export MY_UUIDS=""  # line sep list
 #export PROJECT_NAME="GH-APPSEC-maven"
 export PROJECT_NAME="Unknown-2021-01-13"
-export PROJECT_NAME="GH-APPSEC-maven\nUnknown-2021-01-13"
+export PROJECT_NAME="GH-APPSEC-maven\nUnknown-2021-01-13" # below, grep PATTERNs are line- and space-based, so can overload with \n or space
+export PROJECT_NAME=""
+export PROJECT_NAME="Unknown-2021-01-23"
+export PROJECT_NAME="Unknown-2021-01-26T17"
+export TEXT_STRING=""
+export TEXT_STRING="OutOfMemoryError\nNMT\nmemory\noom\n.*" # hangs, because it is returning a lot
+export TEXT_STRING="OutOfMemoryError\nNMT\nmemory\noom"
+export TEXT_STRING="OutOfMemoryError\nNMT\nmemory\noom\nTest_0009\nERROR"
+export TEXT_STRING="OutOfMemoryError\nNMT\nmemory\noom\nTest_0009\nERROR\njmx"  
+export TEXT_STRING="jmx\ console"  
 
 
 
@@ -43,7 +59,7 @@ export PROJECT_NAME="GH-APPSEC-maven\nUnknown-2021-01-13"
 
 f_stringsToPattern() {
   #input stack of strings, output greppable (-E) PATTERN like "(string1|string2...)"
-  mstrings="$(echo -e "${TEST_UUID}\n${MY_UUIDS}\n${PROJECT_NAME}")"
+  mstrings="$(echo -e "${TEST_UUID}\n${MY_UUIDS}\n${PROJECT_NAME}\n${TEXT_STRING}")"
   mpipedstrings="$(echo -n $mstrings | tr ' \n' '|')" # need -n in echo to prevent trailing pipe
   export PATTERN="($mpipedstrings)"
 }
@@ -56,7 +72,7 @@ f_grepLogs() {
   #lost in sorting:  echo grepping logs from container ID $1 from $SINCE$(date +%Z) until $UNTIL$(date +%Z) for "$PATTERN"
   #docker container logs --details --since "2021-01-15T06:50:00" --until "2021-01-15T07:50:00" $1 |& \
   docker container logs --details --since "$SINCE" --until "$UNTIL" $1 |& \
-    grep -E -e "${PATTERN}" | \
+    grep -E -i -e "${PATTERN}" | \
     while read line ; do
       echo "$(echo "$line" | cut -c1-$CUT_CHARS) :: LOG FROM $1 $(docker ps | grep $1 | cut -d\/ -f2 | cut -d\: -f1 | sed -re 's/blackduck-//g')"
     done
@@ -68,6 +84,7 @@ export -f f_grepLogs
 
 f_getContainerIDs() {
 #use ps instead of ps -q so can filter by container name 
+#add -e ".*" to grep logs from all containers
 docker ps | \
 grep -e scan -e jobrunner -e ".*" | \
 grep -v CONTAINER | \
