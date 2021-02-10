@@ -19,15 +19,19 @@
 
 #TODO
 #get server cert fingerprint to detect transparent proxy
+#convert keystore to pem for curl:  https://gist.github.com/Hakky54/049299f0874fd4b870257c6458e0dcbd
+#add keystore options to curl, openssl tests. 
 
 
 #CONFIG
 TEST_HOST_PROTOCOL="https" # for detect and curl, like https
-TEST_HOST=sup-pjalajas-hub.dc1.lan  # without protocol, no trailing slash
 TEST_HOST=qa-hub-perf05.dc1.lan  # without protocol, no trailing slash
 TEST_HOST=sup-pjalajas-2.dc1.lan  # without protocol, no trailing slash
+TEST_HOST=sup-pjalajas-hub.dc1.lan  # without protocol, no trailing slash
 TEST_HOST_PORT=443 # for openssl
+#ALERT_TRUST_STORE="-Djavax.net.ssl.trustStore=/opt/blackduck/alert/security/blackduck-alert.truststore"
 JAVAX_D=" -Djavax.net.debug=all " # lighter option:  -Djavax.net.debug=ssl,handshake  
+JAVAX_D=" -Djavax.net.debug=all -Djavax.net.ssl.trustStore=/opt/blackduck/alert/security/blackduck-alert.truststore " # lighter option:  -Djavax.net.debug=ssl,handshake  
   #See:  https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#Debug
 BLACKDUCK_USERNAME=sysadmin
 BLACKDUCK_PASSWORD=blackduck
@@ -48,7 +52,6 @@ CURL_INSECURE="" # start with empty string (more secure), then change to "--inse
     --blackduck.username="${BLACKDUCK_USERNAME}" \
     --blackduck.password="${BLACKDUCK_PASSWORD}" \
     --detect.test.connection \
-    --blackduck.trust.cert="${BLACKDUCK_TRUST_CERTS}" \
     --blackduck.trust.cert="${BLACKDUCK_TRUST_CERTS}" \
     --logging.level.com.synopsys.integration="${LOGGING_LEVEL_INTEGRATION}" \
     2>&1 ; 
@@ -77,4 +80,5 @@ exit
 #REFERENCE
 : '
 
+    --blackduck.trust.cert="${BLACKDUCK_TRUST_CERTS}" \
 '
