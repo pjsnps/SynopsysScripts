@@ -20,8 +20,10 @@ projectVersionId="a145ed5a-a241-47a2-8ff7-2aa1a8fecb7b"
 projectVersionId="c3780340-f560-455c-a150-c20431a6b728"
 componentId="7a54f575-7f1a-4414-9d4d-6bc0e7a9224d"
 componentId="907300e1-d66e-45ef-b77d-a790ed30b4e1"
+componentName="express" 
 componentVersionId="a69b12a0-c9b9-4f74-ad63-de8bac977b32"
 componentVersionId="a7d7dfd8-ef3c-4a2b-a04d-5b432eaccb7d"
+componentVersionString="1.0.0"
 scan="598cecc4-0a7e-46e9-96ba-5a63be41ccf1"  # application/vnd.blackducksoftware.scan-4+json
 scanId=${scan}
 codeLocationId="15d3370b-3b88-4dbc-acdd-e7f86cca8ab5"  # application/vnd.blackducksoftware.scan-4+json
@@ -30,6 +32,7 @@ codeLocationId="15d3370b-3b88-4dbc-acdd-e7f86cca8ab5"  # application/vnd.blackdu
 #BD_TOKEN="MTM3NWQ3Y2MtYTgyNS00ODBjLTkyNGItMzMzNjU0MmFmYzIwOjc4YzM2ZmMzLWYxZDktNDRlYy04ZGFhLTE1OTYwMDYxMjQ1Nw=="
 #BD_TOKEN="ZWIyM2YzYjctYTlkOS00NjY3LThkZDktM2QxM2NhMTJhZjA0OjVkNThmMmQ3LTE0MmQtNDA0Zi1iM2YwLTNkNWRjYTM3MmM5YQ=="
 BD_TOKEN="NjVhYjVlZDgtNjc4OC00NzY0LTg4NWEtNjk4Y2VkMzgyOWY0OjY5ZmQwMmFhLWVjZTUtNDA1ZS1hYWM2LTYyZmVkM2I0ZGVlZA=="
+BD_TOKEN="Nzk4YzViOGItZDUxMC00NWZkLWE4MmUtMzExYzkzZjhkNTUxOmVjNWVkYmU0LTJkNzctNDU5Ni1hNWEzLTQwYWIwOWUxZTAzNg=="
 #BD_URL="https://sup-pjalajas-hub.dc1.lan"  # with httpx, no trailing slash
 BD_URL="https://sup-pjalajas-2.dc1.lan"  # with httpx, no trailing slash
 BD_API_TOKENS_AUTH="/api/tokens/authenticate"  # no trailing slash
@@ -100,6 +103,11 @@ BD_API_METHOD="GET" ; BD_API_REQUEST="/api/notifications-filters?filterKey=notif
 #BD_API_METHOD="GET" ; BD_API_REQUEST="/api/projects/7d104f09-3273-448c-81dc-e33a7674da8f/versions/a145ed5a-a241-47a2-8ff7-2aa1a8fecb7b/components/7a54f575-7f1a-4414-9d4d-6bc0e7a9224d/versions/a69b12a0-c9b9-4f74-ad63-de8bac977b32/policy-status"
 BD_API_METHOD="GET" ; BD_API_REQUEST="/api/projects/${projectId}/versions/${projectVersionId}/components/${componentId}/versions/${componentVersionId}/policy-status" ; BD_API_REQUEST_CONTENT_TYPE="content-type: application/vnd.blackducksoftware.internal-1+json"
 BD_API_METHOD="GET" ; BD_API_REQUEST="/api/projects/${projectId}/versions/${projectVersionId}/components/${componentId}/versions/${componentVersionId}/policy-status" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.bill-of-materials-6+json"
+#GET /api/components Accept: application/vnd.blackducksoftware.component-detail-4+json
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/components?q=npmjs:expressjs/1.0.0" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.component-detail-4+json" # 0
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/components?q=node:express/1.0.0" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.component-detail-4+json" # 0
+BD_API_METHOD="GET" ; BD_API_REQUEST="/api/components?q=npmjs:express/1.0.0" ; BD_API_REQUEST_CONTENT_TYPE="application/vnd.blackducksoftware.component-detail-4+json" # WORKS
+
 
 # INIT
 

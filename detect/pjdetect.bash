@@ -203,7 +203,7 @@ echo
     #--detect.project.name="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)" \
     #--detect.project.version.name='PVN_$(date --utc +%m%d%H%M%SZ)' \
     #--detect.project.version.notes="$(date --utc +%m%d%H%M%SZ)\ pjalajas@synopsys.com" \
-PN="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%SZ)"
+PN="PN_$(echo "${DETECTSOURCEPATHMOD}" | tr / '\n' | tail -n 1)_$(date --utc +%m%d%H%M%S.%NZ)"
 PVN="PVN_${PN}"
     #--blackduck.url='https://webserver' \
 JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS" bash <(curl -k -s -L https://detect.synopsys.com/detect.sh) \
@@ -229,6 +229,7 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
+    --blackduck.url='https://sup-pjalajas-2.dc1.lan' \
     --detect.included.detector.types=GO_MOD \
     --detect.tools=DETECTOR \
     --detect.detector.buildless=false \

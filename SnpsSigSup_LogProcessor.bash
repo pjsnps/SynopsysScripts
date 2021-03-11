@@ -6,9 +6,9 @@ shopt -s extglob
 #AUTHOR:     pjalajas@synopsys.com
 #LICENSE:    SPDX Apache-2.0
 #CREATED:    2020-08-23
-#VERSION:    :r ! date -u +\%y\%m\%d\%H\%MZ : 2009121317Z
+#VERSION:    :r ! date -u +\%y\%m\%d\%H\%MZ : 20210302T1722
 #GREPVCKSUM: ____ # :! grep -v grepvcksum <script> | cksum
-#CHANGELOG: 2009121317Z pj rename, try to make progress
+#CHANGELOG: 20210302T1722 pj rename, try to make progress
 
 #PURPOSE:    Plan is still evolving, probably different from what is stated herein.  Identify what kind of log we are processing, and process it.  "Process" meaning, rationalize or normalize, to make them more consistent and complete.  To be used in pipeline before loginterlacer.bash; keep loginterlacing.bash just for the interlacing task, not pre-preprocessing which is what this script does..
 
