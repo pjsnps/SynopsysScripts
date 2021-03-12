@@ -3,13 +3,18 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-10
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2103120018Z
+#VERSION: 2103120309Z
 
-#PURPOSE: Reads log lines in from pipe within a clock hour. Lines with no timestamp are also output. Pipe these into GreatPrepender.bash.
+#PURPOSE: Reads log lines in from pipe. Outputs lines between lines with datestamps matching sed regex expressions in command line position $1 and $2. Lines, between those line, with no timestamp are also output.  For piping into SnpsSigSup_GreatPrepender.bash.
+
+#USAGE: <list of Synopsys Black Duck system log file lines> | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "<regex earlier>" "<regex later>" 
+#USAGE: cat ./blackduck_bds_logs-20210309T023325.zip.expanded/standard/*/app-log/2021-03-04.log | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "2021-03-04 20:" "2021-03-04 21:" 
+#USAGE: time (parallel 'cat {} | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "2021-03-04 20:" "2021-03-04 21:" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_GreatPrepender.bash' ::: ./blackduck_bds_logs-20210309T023325.zip.expanded/standard/*/app-log/2021-03-04.log | parallel 'echo {} | grep -E -e "(NullP|ERROR)"' | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-500 ) # PJHIST LumberMill
 
 #NOTES: Designed for Black Duck system logs downloaded from web ui of format like:
 #   [4d7f6f0d393a] 2021-03-03 23:59:57,541Z[GMT] [pool-10-thread-43] INFO org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {tls}->http://10.251.20.33:8300->https://kb.blackducksoftware.com:443: The target server failed to respond
-#TODO:  Slow...not sure what we can do...  Aggressively filter the input lines to your hour of interest. 
+#TODO:  Slow... Add more gnu parallel; add gnu parallel servers; tighten up regex; aggressively filter the input lines to hour or minute of interest. 
+#TODO:  Deal with when $1 or $2 doesn't exactly match an actual timestamp. Opposing pressures: the more precise your $1 and $2 timestamps (12:15 being more precise than 12:) , then all this processing should be faster, BUT, the more likely one or both timestamps are not found...then what happens?  
 
 while read -r line
 do
