@@ -3,7 +3,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-10
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2103110317Z
+#VERSION: 2103120018Z
 
 #PURPOSE: Reads log lines in from pipe within a clock hour. Lines with no timestamp are also output. Pipe these into GreatPrepender.bash.
 
@@ -13,8 +13,21 @@
 
 while read -r line
 do
-  echo "$line" | sed -nre "/2021-03-04 18:0[0-9]/,/2021-03-04 18:10/p" 
+  #echo "$line" | sed -nre "/2021-03-04 18:0[0-9]/,/2021-03-04 18:10/p" 
+  echo "$line" | sed -nre "/$1/,/$2/p" 
 done
 
 exit
 #REFERENCE
+: '
+[pjalajas@sup-pjalajas-hub N00854173_2020120Performance]$ time (parallel 'cat {} | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "2021-03-04 20:" "2021-03-04 21:" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_GreatPrepender.bash' ::: ./blackduck_bds_logs-20210309T023325.zip.expanded/standard/*/app-log/2021-03-04.log | parallel 'echo {} | grep -E -e "(NullP|ERROR)"' | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-500 ) # PJHIST LumberMill
+     33 [] ERROR com.blackducksoftware.core.rest.server.RestExceptionViewConverter - Exception stack trace:
+     32 [] ERROR com.blackducksoftware.core.rest.server.RestExceptionViewConverter - Handling exception for url: 'https://blackduck.eng.netapp.com/api/projects/[]/versions/[]/bom-status', logRef: 'hub-webapp_[]', locale: 'en_US', msg: at index 2
+      1 [] ERROR com.blackducksoftware.core.rest.server.RestExceptionViewConverter - Handling exception for url: 'https://blackduck.eng.netapp.com/api/projects/[]/versions/[]/components/[]/versions/[]', logRef: 'hub-webapp_[]', locale: 'en_US', msg: Batch update returned unexpected row count from update [0]; actual row count: 0; expected: 1
+      1 [] ERROR com.blackducksoftware.core.security.impl.RunAsService - runasservice
+      1 [] ERROR org.hibernate.engine.jdbc.batch.internal.BatchingBatch - []: Exception executing batch [org.hibernate.StaleStateException: Batch update returned unexpected row count from update [0]; actual row count: 0; expected: 1], SQL: delete from ST.component_adjustment where id=?
+
+real    6m45.166s
+user    9m12.352s
+sys     11m46.227s
+'
