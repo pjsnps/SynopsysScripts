@@ -3,7 +3,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2103120017Z
+#VERSION: 2103121019Z
 
 #PURPOSE: Inputs lines from stdin, outputs lines with varying content deleted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. 
 
@@ -15,10 +15,20 @@ do
   echo "$line" | \
     sed -r \
         -e 's/2021-.*\[[0-9a-f].*https-.*exec-[0-9]{1,4}\]/[]/g' \
+        -e 's/2021-.*\[[0-9a-f].*pool-[0-9]*-thread-[0-9]*\]/[]/g' \
+        -e 's/2021-.*\[[0-9a-f].*jobRunner-[0-9]*\]/[]/g' \
         -e 's/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/[]/g' \
         -e 's/(hub-[a-z]+_)[A-Za-z0-9]+/\1[]/g' \
-        -e 's/HHH[0-9]+/[]/g'
+        -e 's/HHH[0-9]+/[]/g' \
+        -e 's/ duration: [0-9]+\.[0-9]+ / duration: [] /g' \
+        -e 's/ duration: [0-9]+\.[0-9]+E-?[0-9]+ / duration: [] /g' \
+        -e 's/ [0-9]+ms/ []ms/g' \
+        -e 's/versionBomId=[0-9]+/versionBomId=[]/g' \
+        -e 's/(created|updated)At=20[0-9]{2}-[01][0-9]-[0-3][0-9]T[0-2][0-9](:[0-5][0-9]){2}\.[0-9]*Z/\1At=[]/g' \
+        
+        #keep a blank line above this one
 done
+
 
 exit
 #REFERENCE
