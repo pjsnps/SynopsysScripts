@@ -4,7 +4,7 @@
 #DATE: 2020-12-09
 #LICENSE: SPDX Apache-2.0 https://spdx.org/licenses/Apache-2.0.html
 #SUPPORT: https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
-#VERSION:  2012141828Z # pj relatively minor changes 
+#VERSION:  2103151535Z # pj test kb
 
 #PURPOSE: To test, among other things, Synopsys Detect connectivity to Black Duck server, etc 
 
@@ -18,9 +18,9 @@
 #USAGE: Send output file to Synopsys Software Integrity Group Support team for review. 
 
 #TODO
-#get server cert fingerprint to detect transparent proxy
 #convert keystore to pem for curl:  https://gist.github.com/Hakky54/049299f0874fd4b870257c6458e0dcbd
 #add keystore options to curl, openssl tests. 
+#add curl --trace-ascii - https://kb.blackducksoftware.com/api/health |& less -inRF                                                   
 
 
 #CONFIG
@@ -28,6 +28,7 @@ TEST_HOST_PROTOCOL="https" # for detect and curl, like https
 TEST_HOST=qa-hub-perf05.dc1.lan  # without protocol, no trailing slash
 TEST_HOST=sup-pjalajas-2.dc1.lan  # without protocol, no trailing slash
 TEST_HOST=sup-pjalajas-hub.dc1.lan  # without protocol, no trailing slash
+TEST_HOST=kb.blackducksoftware.com  # without protocol, no trailing slash
 TEST_HOST_PORT=443 # for openssl
 #ALERT_TRUST_STORE="-Djavax.net.ssl.trustStore=/opt/blackduck/alert/security/blackduck-alert.truststore"
 JAVAX_D=" -Djavax.net.debug=all " # lighter option:  -Djavax.net.debug=ssl,handshake  
@@ -35,8 +36,8 @@ JAVAX_D=" -Djavax.net.debug=all -Djavax.net.ssl.trustStore=/opt/blackduck/alert/
   #See:  https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#Debug
 BLACKDUCK_USERNAME=sysadmin
 BLACKDUCK_PASSWORD=blackduck
-BLACKDUCK_TRUST_CERTS=false # start with false (more secure), then change to true if needed
 BLACKDUCK_TRUST_CERTS=true # start with false (more secure), then change to true if needed
+BLACKDUCK_TRUST_CERTS=false # start with false (more secure), then change to true if needed
 LOGGING_LEVEL_INTEGRATION=TRACE
 CURL_INSECURE="" # start with empty string (more secure), then change to "--insecure" if needed
 CURL_INSECURE="--insecure" # start with empty string (more secure), then change to "--insecure" if needed
@@ -79,6 +80,19 @@ exit
 
 #REFERENCE
 : '
+{
+  "isPostgresqlHealthy": true,
+  "isHbaseHealthy": true,
+  "isGraphDbHealthy": true,
+  "lastCheckedDate": "2021-03-15T15:56:53.079Z",
+  "_meta": {
+    "href": "/api/health",
+    "links": []
+  },
+  "isHealthy": true
+}
+
+
 
     --blackduck.trust.cert="${BLACKDUCK_TRUST_CERTS}" \
 '
