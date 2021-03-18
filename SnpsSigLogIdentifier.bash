@@ -23,7 +23,7 @@ shopt -s extglob
 
 
 #TODO:  Create a datetimestamp rationalizer library script.  Input anything that kind of resembles a date, and it will output a reversible datetime stamp.
-#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/netapp/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogIdentifier.bash '{}'
+#TODO: BUG:  [pjalajas@sup-pjalajas-hub SynopsysScripts]$ mdate=2020-08-13 ; find ~/dev/customers/customer/00818946_ToddVulnsNoProjects/ -iwholename "*/*/*/${mdate}.log" | grep -e "app-log" -e "access-log" | grep -v "documentation" | xargs -I'{}' -d '\n' -P $(nproc) ./SnpsSigLogIdentifier.bash '{}'
      #  trying shopt -s extglob, failed
 #TODO: ____ 
 
@@ -48,7 +48,7 @@ printlogdate() { date --utc +%Y-%m-%dT%H:%M:%S.%NZ\ %a ; } # For prepending to o
 
 
 #MAIN
-  #like:  /home/pjalajas/dev/customers/netapp/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-authentication/app-log/2020-08-13.log
+  #like:  /home/pjalajas/dev/customers/customer/00818946_ToddVulnsNoProjects/blackduck_bds_logs-20200813T201257/hub-authentication/app-log/2020-08-13.log
   #if [[ "$mdebug" == "DEBUG" ]] ; then echo "$(head $filepathname)" ; fi
   mlogtype="$(echo $mfilepathname | sed -re 's#^.*(/hub-.*$)#\1#g' | cut -d/ -f2,3)"
   #echo $mlogtype
