@@ -1,13 +1,14 @@
-#!/usr/bin/bash
+#!/dev/null
 #/home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-10
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2103120309Z
+#VERSION: 20210318T0238
+#CHANGES: pj actually, don't use this script, little benefit to filter by timestamp, hard to do perfectly.  
 
 #PURPOSE: Reads log lines in from pipe. Outputs lines between lines with datestamps matching sed regex expressions in command line position $1 and $2. Lines, between those line, with no timestamp are also output.  For piping into SnpsSigSup_GreatPrepender.bash.
 
-#USAGE: <list of Synopsys Black Duck system log file lines> | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "<regex earlier>" "<regex later>" 
+#USAGE: <list of Synopsys Black Duck system log file lines> | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash  
 #USAGE: cat ./blackduck_bds_logs-20210309T023325.zip.expanded/standard/*/app-log/2021-03-04.log | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "2021-03-04 20:" "2021-03-04 21:" 
 #USAGE: time (parallel 'cat {} | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_SedDated.bash "2021-03-04 20:" "2021-03-04 21:" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_GreatPrepender.bash' ::: ./blackduck_bds_logs-20210309T023325.zip.expanded/standard/*/app-log/2021-03-04.log | parallel 'echo {} | grep -E -e "(NullP|ERROR)"' | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-500 ) # PJHIST LumberMill
 
