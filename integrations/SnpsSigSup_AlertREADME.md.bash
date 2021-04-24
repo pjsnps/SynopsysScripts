@@ -4,8 +4,8 @@
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT: TODO
 #DATE:   Thu Nov 12 22:02:37 UTC 2020
-#VERSION:  2104230457Z
-#CHANGE: seems to work...
+#VERSION:  2104240355Z
+#CHANGE:  pj works to launch Alert with Black Duck and Jira certs. TODO: Next: write newman api for setting up Provider, Channel, Distribution.
 
 #PURPOSE:  USE AT OWN RISK.  For testing only, not safe.  Deletes things.  
 #PURPOSE:  Try to automate setting up the simplest possible Synopsys Alert by scriptifying the README.md. Wish me luck. 
@@ -16,6 +16,25 @@
 
 #TODO: This is a first working prototype.  Lots of cleanup to do, guardrails to install.
 
+#https://synopsys.atlassian.net/wiki/spaces/INTDOCS/pages/187564033/Synopsys+Alert
+#https://github.com/blackducksoftware/blackduck-alert
+
+#CONFIG
+#Until I move them all here, search rest of file for CONFIG, too...
+#Compatability: https://synopsys.atlassian.net/wiki/spaces/INTDOCS/pages/177799187/Black+Duck+Release+Compatibility
+#ALERT_VERSION=6.4.3   # CONFIG    not released yet
+#ALERT_VERSION=6.4.2   # CONFIG   fails with 2021.2.0? 
+  # 2021-04-23 22:59:01.878  WARN 1 --- [nio-8443-exec-5] c.s.i.a.p.b.v.BlackDuckValidator         : User permission failed, cannot read notifications from Black Duck.
+  # 2021-04-23 22:59:06.765 ERROR 1 --- [nio-8443-exec-6] c.s.i.a.p.b.a.BlackDuckGlobalTestAction  : Could not perform the authorization request: webserver
+ALERT_VERSION=6.4.0   # CONFIG
+#BLACKDUCK_HOSTNAME=sup-pjalajas-hub.dc1.lan  # set to "webserver" if you haven't set the BD hub webserver name in the BD webserver .env file
+BLACKDUCK_HOSTNAME=webserver  # set to "webserver" if you haven't set the BD hub webserver name in the BD webserver .env file
+JIRA_HOSTNAME=snps-sig-sup-pjalajas.atlassian.net # https://snps-sig-sup-pjalajas.atlassian.net/jira/software/c/projects/AT/issues/
+grep $BLACKDUCK_HOSTNAME /etc/hosts # to match hub cert SAN name to avoid this ERROR: TODO _____
+BLACKDUCK_TOKEN="ZDg1NWZmMDctM2U5Yy00YTMzLWE2ZTUtMjIzMzZjMGFiZWY3OjhkNTcwMTgwLTIzN2ItNDZhMC05ZTRkLTk4YjM2Zjk5OTdjMg=="
+JIRA_TOKEN="5tUTpmwRGmuvkXjx95PW450D"
+WEBSERVER_IP=10.1.65.171  # appended to /etc/hosts inside container, so can match container cert name/SAN for Black Duck Provider config, https://webserver
+
 #INIT
 
 date --utc 
@@ -23,12 +42,6 @@ date
 hostname -f
 pwd
 whoami
-
-echo
-echo Removing running Alert stacks...
-docker stack rm $(docker stack ls | grep alert_.*Swarm | cut -d ' ' -f 1)
-echo sleeping 5 seconds to let the stack remove..
-sleep 5s
 
 #MAIN
 
@@ -52,11 +65,19 @@ echo "TODO: this is a doc BUG, needs a link or explanation:
 - Before installing or upgrading Alert the desired persistent storage volumes must be created for Alert and needs to be either:
     - Node locked.     
     - Backed by an NFS volume or a similar mechanism.
-"
+I think it means, just use the alert postgresql container, or something else.  We'll just use the pg container in this simple script."
+
+#read -p "OK? Hit Enter to continue..." x
+
+echo
+echo Removing running Alert stacks...
+docker stack rm $(docker stack ls | grep alert_.*Swarm | cut -d ' ' -f 1)
+echo
+echo sleeping 5 seconds to let the stack remove...
+sleep 5s
 
 ## Installing Alert
-echo Downloading Alert orchestration files
-ALERT_VERSION=6.4.2   # CONFIG
+echo Downloading Alert orchestration files...
 #wget https://github.com/blackducksoftware/blackduck-alert/releases/download/6.4.2/blackduck-alert-6.4.2-deployment.zip
 echo
 wget https://github.com/blackducksoftware/blackduck-alert/releases/download/${ALERT_VERSION}/blackduck-alert-${ALERT_VERSION}-deployment.zip
@@ -67,7 +88,7 @@ wget https://github.com/blackducksoftware/blackduck-alert/releases/download/${AL
 #```
 #- Extract the contents of the ZIP file.
 echo
-echo Extracting the contents of the ZIP file.
+echo Extracting the contents of the ZIP file...
 #unzip blackduck-alert-6.4.2-deployment.zip -d blackduck-alert-6.4.2-deployment
 echo
 echo Removing prior files...
@@ -77,7 +98,7 @@ echo unzipping new deployment zip...
 unzip blackduck-alert-${ALERT_VERSION}-deployment.zip -d blackduck-alert-${ALERT_VERSION}-deployment
 #- For installing with Black Duck the files are located in the *hub* sub-directory.
 #- For installing Alert standalone the files are located in the *standalone* sub-directory.
-echo Installing Alert standalone, the files are located in the *standalone* sub-directory.
+echo Installing Alert standalone, the files are located in the *standalone* sub-directory...
 : '
 
   inflating: blackduck-alert-6.4.2-deployment/blackduck-alert-6.4.2-deployment/docker-swarm/hub/docker-compose.yml
@@ -113,7 +134,8 @@ rm -rf ./blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VER
 rm -rf ./blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment/helm
 echo
 echo Our working files...
-find ./blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment -ls
+find ./blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment -type f -ls
+STANDALONE_DOCKER_SWARM_DIR=blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment/docker-swarm # no trailing slash
 LOCAL_OVERRIDES_FILENAME=blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment/docker-swarm/docker-compose.local-overrides.yml # CONFIG
 STANDALONE_DOCKER_COMPOSE_FILENAME=blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment/docker-swarm/standalone/docker-compose.yml # CONFIG
 
@@ -139,8 +161,8 @@ STACK_NAME=alert_$(echo $ALERT_VERSION | tr -d \.)_$(date --utc +%m%d%H%MZ)   # 
 
 #CONFIG:  Edit this YML if needed.  
 #Insert these below in LOCAL_OVERRIDES_YML under   alert: environment:
-#- JAVA_TOOL_OPTS=-Djavax.net.debug=all  # CONFIG
-#- ALERT_LOGGING_LEVEL=INFO  # CONFIG
+#- JAVA_TOOL_OPTIONS=-Djavax.net.debug=all  # CONFIG
+#- ALERT_LOGGING_LEVEL=INFO  # CONFIG #- Set the value to one of the following: #- DEBUG #- ERROR #- INFO #- TRACE #- WARN
 LOCAL_OVERRIDES_YML="
 version: '3.6'
 services:
@@ -154,12 +176,19 @@ services:
       - ALERT_DB_PASSWORD
   alert:
     environment:
-      - ALERT_LOGGING_LEVEL=INFO
+      - ALERT_LOGGING_LEVEL=TRACE
+      - JAVA_TOOL_OPTIONS='-Djavax.net.debug=all'  
     secrets:
       - ALERT_ENCRYPTION_PASSWORD
       - ALERT_ENCRYPTION_GLOBAL_SALT
       - ALERT_DB_USERNAME
       - ALERT_DB_PASSWORD
+      - source: jssecacerts
+        target: jssecacerts
+        mode: 0664
+      - ALERT_TRUST_STORE_PASSWORD
+    extra_hosts:
+      - \"webserver:$WEBSERVER_IP\" 
 secrets:
   ALERT_ENCRYPTION_PASSWORD:
     external: true
@@ -173,6 +202,12 @@ secrets:
   ALERT_DB_PASSWORD:
     external: true
     name: ${STACK_NAME}_ALERT_DB_PASSWORD
+  jssecacerts:
+    external: true
+    name: ${STACK_NAME}_jssecacerts
+  ALERT_TRUST_STORE_PASSWORD:
+    external: true
+    name: ${STACK_NAME}_ALERT_TRUST_STORE_PASSWORD
 "
 echo "$LOCAL_OVERRIDES_YML" > $LOCAL_OVERRIDES_FILENAME
 
@@ -185,7 +220,6 @@ echo Creating docker secrets for Alert...
     FILE_CONTAINING_ENCRYPTION_PASSWORD=file_containing_encryption_password
     echo "blackduck" > $FILE_CONTAINING_ENCRYPTION_PASSWORD
     docker secret create ${STACK_NAME}_ALERT_ENCRYPTION_PASSWORD $FILE_CONTAINING_ENCRYPTION_PASSWORD
-    
 
 ##### 2. Create ALERT_ENCRYPTION_GLOBAL_SALT secret.
 #- Create a docker secret containing the encryption salt for Alert.
@@ -208,31 +242,269 @@ echo Creating docker secrets for Alert...
     echo "blackduck" > $FILE_CONTAINING_DB_PASSWORD
     docker secret create ${STACK_NAME}_ALERT_DB_PASSWORD $FILE_CONTAINING_DB_PASSWORD
 
+
+
+
+
 ##### 5. Manage certificates.	
+#Using Custom Certificate TrustStore
+#Custom java TrustStore file for the Alert server to communicate over SSL to external systems.
+echo
+echo Creating Custom java TrustStore file for the Alert server to communicate over SSL to external systems...
+#You can import certificates via the Alert UI if you log in as a system administrator. This is the preferred option. You may follow these instructions to supply a TrustStore on application startup.
+#Must have a valid JKS trust store file that can be used as the TrustStore for Alert. If certificate errors arise, then this is the TrustStore where certificates will need to be imported to resolve those issues.
+#Only one of the following secrets needs to be created. If both are created, then jssecacerts secret will take precedence and be used by Alert.
+#Create the secret. Only create one of the following secrets.
+#jssecacerts - The java TrustStore file with any custom certificates imported.
+#docker secret create <STACK_NAME>_jssecacerts <PATH_TO_TRUST_STORE_FILE>	
+
+echo Creating new truststore...
+echo TODO: import Black Duck and Jira certificates into new truststore...
+
+PATH_TO_TRUST_STORE_FILE=${STANDALONE_DOCKER_SWARM_DIR}/jssecacerts # CONFIG
+rm $PATH_TO_TRUST_STORE_FILE
+TRUSTSTORE_PASSWORD=changeit # CONFIG
+
+echo Importing Black Duck and Jira certificates into Alert truststore...
+#sudo keytool -import -alias sup-pjalajas-hub.dc1.lan -file cert_chain.crt -keystore /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.272.b10-1.el7_9.x86_64/jre/lib/security/jssecacerts -storepass changeit -noprompt
+#echo true | openssl s_client \
+  #-host $BLACKDUCK_HOSTNAME \
+  #-port 443 -showcerts 2>/dev/null | \
+  #openssl x509 | \
+  #> ${BLACKDUCK_HOSTNAME}.pem
+#sudo keytool -import \
+  #-alias $BLACKDUCK_HOSTNAME \
+  #-file ${BLACKDUCK_HOSTNAME}.pem \
+  #-keystore $PATH_TO_TRUST_STORE_FILE \
+  #-storepass $TRUSTSTORE_PASSWORD \
+  #-noprompt
+#rm jssecacerts ; echo true | openssl s_client -host sup-pjalajas-hub.dc1.lan -port 443 -showcerts | keytool -import -alias sup-pjalajas-hub.dc1.lan -keystore jssecacerts -storepass changeit -noprompt
+#rm jssecacerts ; echo true | openssl s_client -host webserver -port 443 -showcerts | keytool -import -alias webserver -keystore jssecacerts -storepass changeit -noprompt
+rm $PATH_TO_TRUST_STORE_FILE 
+#echo true | \
+#  openssl s_client -host webserver -port 443 -showcerts | \
+#  keytool -import -alias webserver -keystore $PATH_TO_TRUST_STORE_FILE -storepass changeit -noprompt -storetype jks
+#keytool -list -keystore $PATH_TO_TRUST_STORE_FILE -storepass changeit
+echo true | \
+  openssl s_client \
+    -host $BLACKDUCK_HOSTNAME \
+    -port 443 \
+    -showcerts | \
+  keytool \
+    -import \
+    -alias $BLACKDUCK_HOSTNAME \
+    -keystore $PATH_TO_TRUST_STORE_FILE \
+    -storepass $TRUSTSTORE_PASSWORD \
+    -noprompt \
+    -storetype jks
+keytool \
+    -list \
+    -keystore $PATH_TO_TRUST_STORE_FILE \
+    -storepass $TRUSTSTORE_PASSWORD
+echo true | \
+  openssl s_client \
+    -host $JIRA_HOSTNAME \
+    -port 443 \
+    -showcerts | \
+  keytool \
+    -import \
+    -alias $JIRA_HOSTNAME \
+    -keystore $PATH_TO_TRUST_STORE_FILE \
+    -storepass $TRUSTSTORE_PASSWORD \
+    -noprompt \
+    -storetype jks
+keytool \
+    -list \
+    -keystore $PATH_TO_TRUST_STORE_FILE \
+    -storepass $TRUSTSTORE_PASSWORD
+
+echo
+echo Creating a docker secret containing the path to the trust store...
+docker secret create ${STACK_NAME}_jssecacerts $PATH_TO_TRUST_STORE_FILE	
+#Create a docker secret containing the password for the trust store.
+echo
+echo Creating a docker secret containing the password for the trust store...
+FILE_CONTAINING_TRUST_STORE_PASSWORD=file_containing_trust_store_password
+echo $TRUSTSTORE_PASSWORD > $FILE_CONTAINING_TRUST_STORE_PASSWORD
+#docker secret create <STACK_NAME>_ALERT_TRUST_STORE_PASSWORD <FILE_CONTAINING_PASSWORD>	
+docker secret create ${STACK_NAME}_ALERT_TRUST_STORE_PASSWORD $FILE_CONTAINING_TRUST_STORE_PASSWORD
+
+
+
+
+
+
+
+
 #### 6. Modify environment variables.
 #- Set the required environment variable ALERT_HOSTNAME. See [Alert Hostname Variable](#alert-hostname-variable)
 echo
 echo Setting the required environment variable ALERT_HOSTNAME. # See [Alert Hostname Variable](#alert-hostname-variable)
-export ALERT_HOSTNAME=$(hostname -f)
+export ALERT_HOSTNAME=$(hostname -f)  # CONFIG
+echo
+echo ALERT_HOSTNAME=$ALERT_HOSTNAME 
+
+
+
+
 
 ##### 7. Deploy the stack.
     #docker stack deploy -c <PATH>/docker-swarm/standalone/docker-compose.yml -c <PATH>/docker-swarm/docker-compose.local-overrides.yml <STACK_NAME>
     echo
     echo Deploying alert...
     docker stack deploy -c $STANDALONE_DOCKER_COMPOSE_FILENAME -c $LOCAL_OVERRIDES_FILENAME $STACK_NAME
+
+
+
+
   
+echo
 echo "Watch deployment with 
 watch docker ps \| grep alert"
 echo -e "\nIn a couple of minutes, run these:
 echo true | openssl s_client -connect ${ALERT_HOSTNAME}:8443
-curl --trace-ascii - --insecure https://${ALERT_HOSTNAME}8443/alert
-Then open your browser to https://${ALERT_HOSTNAME}8443/alert and login with sysadmin / blackduck to continue the installation.  
+curl --trace-ascii - --insecure https://${ALERT_HOSTNAME}:8443/alert
+Then open your browser to https://${ALERT_HOSTNAME}:8443/alert and login with sysadmin / blackduck to continue the installation.  
+Here's your BLACKDUCK_TOKEN: $BLACKDUCK_TOKEN
+Your JIRA_TOKEN: $JIRA_TOKEN
 "
+echo
+echo -e "help:
+https://synopsys.atlassian.net/wiki/spaces/INTDOCS/pages/187564033/Synopsys+Alert
+https://github.com/blackducksoftware/blackduck-alert
 
+TODO:  Move to newman script to setup Provider, Channel, and Distribution via api calls (scraped from har files; see first attempt below in this script). 
+"
 
 
 exit
 #REFERENCE
+
+
+######
+#TODO:
+#Configure Provider, Black Duck...
+#{"context":"GLOBAL","descriptorName":"provider_blackduck","keyToValues":{"provider.common.config.enabled":{"values":["true"],"isSet":true},"provider.common.config.name":{"values":["pjProviderConfig"],"isSet":false},"blackduck.url":{"values":["https://webserver"],"isSet":false},"blackduck.api.key":{"values":["ZDg1NWZmMDctM2U5Yy00YTMzLWE2ZTUtMjIzMzZjMGFiZWY3OjhkNTcwMTgwLTIzN2ItNDZhMC05ZTRkLTk4YjM2Zjk5OTdjMg=="],"isSet":false},"blackduck.timeout":{"values":["300"],"isSet":true}}}
+#Request URL: https://webserver:8443/alert/api/configuration
+#Request Method: POST
+#Status Code: 201 
+#Remote Address: 10.1.65.171:80
+#accept: application/json
+#Cookie: ALERT_SESSION_ID=09967E72E01BC0AB85D6B4C5DD479DDB
+#x-csrf-token: cd93bd4c-dd4c-43d9-86c0-76284a69f516
+#Response: Content-Type: application/json
+
+#TEST:
+Request URL: https://webserver:8443/alert/api/configuration/test
+Request Method: POST
+Status Code: 200 
+Remote Address: 10.1.65.171:80
+Request:
+accept: application/json
+content-type: application/json
+{"context":"GLOBAL","descriptorName":"provider_blackduck","keyToValues":{"provider.common.config.enabled":{"values":["true"],"isSet":true},"provider.common.config.name":{"values":["pjProviderConfig"],"isSet":true},"blackduck.url":{"values":["https://webserver"],"isSet":true},"blackduck.api.key":{"values":[],"isSet":true},"blackduck.timeout":{"values":["300"],"isSet":true}},"id":"16"}
+
+Response:
+Content-Type: application/json
+{"message":"Successfully sent test message.","errors":{},"hasErrors":false}
+
+
+
+
+
+#Configure Channel, Jira Cloud...
+Request URL: https://webserver:8443/alert/api/configuration
+Request Method: POST
+Status Code: 201 
+Remote Address: 10.1.65.171:80
+accept: application/json
+content-type: application/json
+Cookie: ALERT_SESSION_ID=09967E72E01BC0AB85D6B4C5DD479DDB
+x-csrf-token: cd93bd4c-dd4c-43d9-86c0-76284a69f516
+
+{"keyToValues":{"jira.cloud.url":{"values":["https://snps-sig-sup-pjalajas.atlassian.net"],"isSet":false},"jira.cloud.admin.email.address":{"values":["pjalajas@blackduckcloud.com"],"isSet":false},"jira.cloud.admin.api.token":{"values":["5tUTpmwRGmuvkXjx95PW450D"],"isSet":false},"jira.cloud.disable.plugin.check":{"values":["false"],"isSet":true},"jira.cloud.configure.plugin":{"values":[],"isSet":false}},"context":"GLOBAL","descriptorName":"channel_jira_cloud"}
+
+Response:
+Content-Type: application/json
+{"id":"17","keyToValues":{"jira.cloud.admin.api.token":{"values":[],"isSet":true},"jira.cloud.disable.plugin.check":{"values":["false"],"isSet":true},"jira.cloud.admin.email.address":{"values":["pjalajas@blackduckcloud.com"],"isSet":true},"jira.cloud.url":{"values":["https://snps-sig-sup-pjalajas.atlassian.net"],"isSet":true}},"descriptorName":"channel_jira_cloud","context":"GLOBAL","createdAt":"2021-04-24 03:15 (UTC)","lastUpdated":"2021-04-24 03:15 (UTC)"}
+
+
+
+#Configure Distribution:  
+Request URL: https://webserver:8443/alert/api/function/provider.distribution.processing.type
+Request Method: POST
+Status Code: 200 
+Remote Address: 10.1.65.171:8443
+accept: application/json
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Connection: keep-alive
+Content-Length: 168
+content-type: application/json
+Cookie: ALERT_SESSION_ID=09967E72E01BC0AB85D6B4C5DD479DDB
+Host: webserver:8443
+Origin: https://webserver:8443
+Referer: https://webserver:8443/alert/jobs/distribution
+sec-ch-ua: "Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36
+x-csrf-token: cd93bd4c-dd4c-43d9-86c0-76284a69f516
+{"id":null,"context":"DISTRIBUTION","descriptorName":"provider_blackduck","keyToValues":{"channel.common.channel.name":{"values":["channel_jira_cloud"],"isSet":false}}}
+
+Response:
+HTTP/1.1 200
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=31536000 ; includeSubDomains
+X-Frame-Options: DENY
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Sat, 24 Apr 2021 03:39:09 GMT
+
+DISTRIBUTION (I think /validate is the SAVE endpoint, not sure):
+Request URL: https://webserver:8443/alert/api/configuration/job/validate
+Request Method: POST
+Status Code: 200 
+Remote Address: 10.1.65.171:8443
+accept: application/json
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Connection: keep-alive
+Content-Length: 1581
+content-type: application/json
+Cookie: ALERT_SESSION_ID=09967E72E01BC0AB85D6B4C5DD479DDB
+Host: webserver:8443
+Origin: https://webserver:8443
+Referer: https://webserver:8443/alert/jobs/distribution
+sec-ch-ua: "Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36
+x-csrf-token: cd93bd4c-dd4c-43d9-86c0-76284a69f516
+{"jobId":null,"fieldModels":[{"context":"DISTRIBUTION","descriptorName":"channel_jira_cloud","keyToValues":{"channel.common.enabled":{"values":["true"],"isSet":true},"channel.common.channel.name":{"values":["channel_jira_cloud"],"isSet":false},"channel.common.name":{"values":["pjdistro2"],"isSet":false},"channel.common.frequency":{"values":["DAILY"],"isSet":false},"channel.common.provider.name":{"values":["provider_blackduck"],"isSet":false},"channel.jira.cloud.add.comments":{"values":["false"],"isSet":true},"channel.jira.cloud.issue.creator":{"values":[],"isSet":false},"channel.jira.cloud.project.name":{"values":["AT"],"isSet":false},"channel.jira.cloud.issue.type":{"values":["Task"],"isSet":true},"channel.jira.cloud.resolve.workflow":{"values":[],"isSet":false},"channel.jira.cloud.reopen.workflow":{"values":[],"isSet":false},"channel.jira.cloud.field.mapping":{"values":[],"isSet":false}}},{"context":"DISTRIBUTION","descriptorName":"provider_blackduck","keyToValues":{"provider.common.config.id":{"values":["16"],"isSet":false},"provider.distribution.notification.types":{"values":["LICENSE_LIMIT"],"isSet":false},"provider.distribution.processing.type":{"values":["DEFAULT"],"isSet":false},"channel.common.filter.by.project":{"values":["false"],"isSet":true},"channel.common.project.name.pattern":{"values":[],"isSet":false},"channel.common.configured.project":{"values":[],"isSet":false},"blackduck.policy.notification.filter":{"values":[],"isSet":false},"blackduck.vulnerability.notification.filter":{"values":[],"isSet":false}}}],"configuredProviderProjects":[]}
+
+Response:
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Content-Type: application/json
+Date: Sat, 24 Apr 2021 03:39:38 GMT
+Expires: 0
+Pragma: no-cache
+Strict-Transport-Security: max-age=31536000 ; includeSubDomains
+Transfer-Encoding: chunked
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+{"message":"Valid","errors":{},"hasErrors":false}
+
+
 
 Example output:
 
