@@ -1,11 +1,11 @@
 #!/usr/bin/bash
-#SCRIPT:  SnpsSigSup_AlertREADME.md.bash
+#SCRIPT:  /home/pjalajas/Documents/dev/git/SynopsysScripts/integrations/SnpsSigSup_AlertCreateInstance.bash
 #AUTHOR:  pjalajas@synopsys.com
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT: TODO
 #DATE:   Thu Nov 12 22:02:37 UTC 2020
-#VERSION:  2104242025Z
-#CHANGE:  pj start try to curl new Provider..
+#VERSION:  2104250418Z
+#CHANGE:  pj renamed script; created external newman collection to create Provider, Channel, Distribution.
 
 #PURPOSE:  USE AT OWN RISK.  For testing only, not safe.  Deletes things.  
 #PURPOSE:  Try to automate setting up the simplest possible Synopsys Alert by scriptifying the README.md. Wish me luck. 
@@ -99,6 +99,8 @@ unzip blackduck-alert-${ALERT_VERSION}-deployment.zip -d blackduck-alert-${ALERT
 #- For installing with Black Duck the files are located in the *hub* sub-directory.
 #- For installing Alert standalone the files are located in the *standalone* sub-directory.
 echo Installing Alert standalone, the files are located in the *standalone* sub-directory...
+
+#Multiline comment, just for reference:
 : '
 
   inflating: blackduck-alert-6.4.2-deployment/blackduck-alert-6.4.2-deployment/docker-swarm/hub/docker-compose.yml
@@ -127,6 +129,7 @@ echo Installing Alert standalone, the files are located in the *standalone* sub-
   inflating: blackduck-alert-6.4.2-deployment/blackduck-alert-6.4.2-deployment/helm/synopsys-alert/DEVELOPER_README.md
   inflating: blackduck-alert-6.4.2-deployment/blackduck-alert-6.4.2-deployment/helm/synopsys-alert/README.md
 '
+
 echo
 echo Removing extra files...
 rm -rf ./blackduck-alert-${ALERT_VERSION}-deployment/blackduck-alert-${ALERT_VERSION}-deployment/docker-swarm/hub
@@ -251,6 +254,7 @@ echo Creating docker secrets for Alert...
 #Custom java TrustStore file for the Alert server to communicate over SSL to external systems.
 echo
 echo Creating Custom java TrustStore file for the Alert server to communicate over SSL to external systems...
+echo TODO:  try to move this to newman api collection request.
 #You can import certificates via the Alert UI if you log in as a system administrator. This is the preferred option. You may follow these instructions to supply a TrustStore on application startup.
 #Must have a valid JKS trust store file that can be used as the TrustStore for Alert. If certificate errors arise, then this is the TrustStore where certificates will need to be imported to resolve those issues.
 #Only one of the following secrets needs to be created. If both are created, then jssecacerts secret will take precedence and be used by Alert.

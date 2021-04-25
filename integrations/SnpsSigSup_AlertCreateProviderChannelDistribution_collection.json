@@ -1,0 +1,393 @@
+{
+	"info": {
+		"_postman_id": "8acf1761-16df-4eed-95f8-5f1357028e47",
+		"name": "Alert",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authenticate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//var xsrfCookie = postman.getResponseCookie(\"csrftoken\"); postman.setEnvironmentVariable('csrftoken', xsrfCookie.value);\r",
+							"pm.test(\"Status code is 204\", function () {\r",
+							"    pm.response.to.have.status(204);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "blackduck",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "sysadmin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"alertPassword\": \"blackduck\",\r\n  \"alertUsername\": \"sysadmin\",\r\n  \"id\": \"string\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{v_baseUrl}}/alert/api/login",
+					"host": [
+						"{{v_baseUrl}}"
+					],
+					"path": [
+						"alert",
+						"api",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Provider Black Duck",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Connection",
+						"value": "keep-alive"
+					},
+					{
+						"key": "sec-ch-ua",
+						"value": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\""
+					},
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "x-csrf-token",
+						"value": "c9951af0-fb7a-4e29-8dae-7f996a7d3015"
+					},
+					{
+						"key": "sec-ch-ua-mobile",
+						"value": "?0"
+					},
+					{
+						"key": "User-Agent",
+						"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "Origin",
+						"value": "https://webserver:8443"
+					},
+					{
+						"key": "Sec-Fetch-Site",
+						"value": "same-origin"
+					},
+					{
+						"key": "Sec-Fetch-Mode",
+						"value": "cors"
+					},
+					{
+						"key": "Sec-Fetch-Dest",
+						"value": "empty"
+					},
+					{
+						"key": "Referer",
+						"value": "https://webserver:8443/alert/providers/blackduck"
+					},
+					{
+						"key": "Accept-Language",
+						"value": "en-US,en;q=0.9"
+					},
+					{
+						"key": "Cookie",
+						"value": "ALERT_SESSION_ID=56669F1B3DB313748099D0BEF91C8D5B"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"context\":\"GLOBAL\",\"descriptorName\":\"provider_blackduck\",\"keyToValues\":{\"provider.common.config.enabled\":{\"values\":[\"true\"],\"isSet\":true},\"provider.common.config.name\":{\"values\":[\"provider_{{$timestamp}}\"],\"isSet\":false},\"blackduck.url\":{\"values\":[\"https://webserver\"],\"isSet\":false},\"blackduck.api.key\":{\"values\":[\"ZDg1NWZmMDctM2U5Yy00YTMzLWE2ZTUtMjIzMzZjMGFiZWY3OjhkNTcwMTgwLTIzN2ItNDZhMC05ZTRkLTk4YjM2Zjk5OTdjMg==\"],\"isSet\":false},\"blackduck.timeout\":{\"values\":[\"300\"],\"isSet\":true}}}"
+				},
+				"url": {
+					"raw": "{{v_baseUrl}}/alert/api/configuration",
+					"host": [
+						"{{v_baseUrl}}"
+					],
+					"path": [
+						"alert",
+						"api",
+						"configuration"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Channel Jira Cloud",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Connection",
+						"value": "keep-alive"
+					},
+					{
+						"key": "sec-ch-ua",
+						"value": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\""
+					},
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "x-csrf-token",
+						"value": "c9951af0-fb7a-4e29-8dae-7f996a7d3015"
+					},
+					{
+						"key": "sec-ch-ua-mobile",
+						"value": "?0"
+					},
+					{
+						"key": "User-Agent",
+						"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "Origin",
+						"value": "https://webserver:8443"
+					},
+					{
+						"key": "Sec-Fetch-Site",
+						"value": "same-origin"
+					},
+					{
+						"key": "Sec-Fetch-Mode",
+						"value": "cors"
+					},
+					{
+						"key": "Sec-Fetch-Dest",
+						"value": "empty"
+					},
+					{
+						"key": "Referer",
+						"value": "https://webserver:8443/alert/providers/blackduck"
+					},
+					{
+						"key": "Accept-Language",
+						"value": "en-US,en;q=0.9"
+					},
+					{
+						"key": "Cookie",
+						"value": "ALERT_SESSION_ID=56669F1B3DB313748099D0BEF91C8D5B"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"keyToValues\":{\"jira.cloud.url\":{\"values\":[\"https://snps-sig-sup-pjalajas.atlassian.net\"],\"isSet\":false},\"jira.cloud.admin.email.address\":{\"values\":[\"pjalajas@blackduckcloud.com\"],\"isSet\":false},\"jira.cloud.admin.api.token\":{\"values\":[\"5tUTpmwRGmuvkXjx95PW450D\"],\"isSet\":false},\"jira.cloud.disable.plugin.check\":{\"values\":[\"false\"],\"isSet\":true},\"jira.cloud.configure.plugin\":{\"values\":[],\"isSet\":false}},\"context\":\"GLOBAL\",\"descriptorName\":\"channel_jira_cloud\"}"
+				},
+				"url": {
+					"raw": "{{v_baseUrl}}/alert/api/configuration",
+					"host": [
+						"{{v_baseUrl}}"
+					],
+					"path": [
+						"alert",
+						"api",
+						"configuration"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Distribution Black Duck Jira",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Connection",
+						"value": "keep-alive"
+					},
+					{
+						"key": "sec-ch-ua",
+						"value": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\""
+					},
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "x-csrf-token",
+						"value": "c9951af0-fb7a-4e29-8dae-7f996a7d3015"
+					},
+					{
+						"key": "sec-ch-ua-mobile",
+						"value": "?0"
+					},
+					{
+						"key": "User-Agent",
+						"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "Origin",
+						"value": "https://webserver:8443"
+					},
+					{
+						"key": "Sec-Fetch-Site",
+						"value": "same-origin"
+					},
+					{
+						"key": "Sec-Fetch-Mode",
+						"value": "cors"
+					},
+					{
+						"key": "Sec-Fetch-Dest",
+						"value": "empty"
+					},
+					{
+						"key": "Referer",
+						"value": "https://webserver:8443/alert/jobs/distribution"
+					},
+					{
+						"key": "Accept-Language",
+						"value": "en-US,en;q=0.9"
+					},
+					{
+						"key": "Cookie",
+						"value": "ALERT_SESSION_ID=56669F1B3DB313748099D0BEF91C8D5B"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"jobId\":null,\"fieldModels\":[{\"context\":\"DISTRIBUTION\",\"descriptorName\":\"channel_jira_cloud\",\"keyToValues\":{\"channel.common.enabled\":{\"values\":[\"true\"],\"isSet\":true},\"channel.common.channel.name\":{\"values\":[\"channel_jira_cloud\"],\"isSet\":false},\"channel.common.name\":{\"values\":[\"distribution_{{$timestamp}}\"],\"isSet\":false},\"channel.common.frequency\":{\"values\":[\"DAILY\"],\"isSet\":false},\"channel.common.provider.name\":{\"values\":[\"provider_blackduck\"],\"isSet\":false},\"channel.jira.cloud.add.comments\":{\"values\":[\"false\"],\"isSet\":true},\"channel.jira.cloud.issue.creator\":{\"values\":[],\"isSet\":false},\"channel.jira.cloud.project.name\":{\"values\":[\"AT\"],\"isSet\":false},\"channel.jira.cloud.issue.type\":{\"values\":[\"Task\"],\"isSet\":true},\"channel.jira.cloud.resolve.workflow\":{\"values\":[],\"isSet\":false},\"channel.jira.cloud.reopen.workflow\":{\"values\":[],\"isSet\":false},\"channel.jira.cloud.field.mapping\":{\"values\":[],\"isSet\":false}}},{\"context\":\"DISTRIBUTION\",\"descriptorName\":\"provider_blackduck\",\"keyToValues\":{\"provider.common.config.id\":{\"values\":[\"24\"],\"isSet\":false},\"provider.distribution.notification.types\":{\"values\":[\"POLICY_OVERRIDE\"],\"isSet\":false},\"provider.distribution.processing.type\":{\"values\":[\"DEFAULT\"],\"isSet\":false},\"channel.common.filter.by.project\":{\"values\":[\"false\"],\"isSet\":true},\"channel.common.project.name.pattern\":{\"values\":[],\"isSet\":false},\"channel.common.configured.project\":{\"values\":[],\"isSet\":false},\"blackduck.policy.notification.filter\":{\"values\":[],\"isSet\":false},\"blackduck.vulnerability.notification.filter\":{\"values\":[],\"isSet\":false}}}],\"configuredProviderProjects\":[]}"
+				},
+				"url": {
+					"raw": "{{v_baseUrl}}/alert/api/configuration/job",
+					"host": [
+						"{{v_baseUrl}}"
+					],
+					"path": [
+						"alert",
+						"api",
+						"configuration",
+						"job"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "blackduck",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "sysadmin",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "v_baseUrl",
+			"value": "https://sup-pjalajas-hub.dc1.lan:8443"
+		}
+	]
+}
