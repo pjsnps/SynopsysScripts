@@ -3,10 +3,12 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2104221633Z
-#CHANGES: pj fix journalctl redaction, #node.id=0zhy68d65ar4sck68fbafgj0d service.id=zvw6kqnjtv03pnd2brhhcqawg task.id=est94zjlqxq79ve7xu7683jjs,  node 0zhy68d65ar4sck68fbafgj0d" error="could not find network allocator state for network ujr5rcujwwuf5b7wqh17ahdo1", container=112d7b02e976c0632fa6bcd4d4f41cea6727a2fe840daaa1385399f587972855, and a few others, including stack names.
+#VERSION: 2104262100Z
+#CHANGES: pj add Alert log redactions 
 
-#PURPOSE: Inputs lines from stdin, outputs lines with varying content deleted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. 
+#PURPOSE: Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. 
+
+#USAGE: date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/g'                                                                                     
 
 #NOTES: Designed for Black Duck system logs downloaded from web ui of format like:
 #   [4d7f6f0d393a] 2021-03-03 23:59:57,541Z[GMT] [pool-10-thread-43] INFO org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {tls}->http://10.251.20.33:8300->https://kb.blackducksoftware.com:443: The target server failed to respond
@@ -67,10 +69,85 @@ do
         -e 's/(unknown network )[0-9a-zA-Z_-]+(_default id)/\1[]\2/g' \
         -e 's/(No such container: )[0-9a-zA-Z_-]+_/\1[]_/g' \
         -e 's/(network )[0-9a-zA-Z_-]+(_default remove failed)/\1[]\2/g' \
+        -e 's/2021-04-23 12:00:00.868/[]/g' \
+        -e 's/....-..-.. ..:..:..\..../[]/g' \
+        -e 's/(blackduck)[0-9]+/\1/g' \
+        -e 's/(taskScheduler-)[0-9]+/\1[]/g' \
+        -e 's/(n?io-8443-exec-)[0-9]+/\1[]/g' \
+        -e 's/(PgConnection@)[0-9a-z]+/\1[]/g' \
+        -e 's/(enerContainer-)[0-9]+/\1[]/g' \
+        -e 's/(Bearer:? )[0-9a-zA-Z\._-]+/\1[]/g' \
+        -e 's/(HikariPool-)[0-9]+/\1[]/g' \
 
         #keep a blank line above this one
+#TODO: [bd.corp.[customer].com/[].28]  
 done
 
 
 exit
 #REFERENCE
+
+example:
+[pjalajas@sup-pjalajas-hub SynopsysScripts]$ date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/g'                                                                                     
+Mon Apr 26 21:50:41 UTC 2021
+webserver
+/home/pjalajas/dev/git/SynopsysScripts
+   1958 at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54)
+   1946 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckApiTokenValidator : Error reading notifications
+   1946 []  WARN 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckValidator         : User permission failed, cannot read notifications from Black Duck.
+   1445 Caused by: java.net.UnknownHostException: blackduck.corp.[customer].com
+   1445 com.synopsys.integration.exception.IntegrationException: Could not perform the authorization request: blackduck.corp.[customer].com
+   1434 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckValidator         : Could not perform the authorization request: blackduck.corp.[customer].com: System error
+    483 Caused by: java.net.UnknownHostException: bd.corp.[customer].com
+    483 com.synopsys.integration.exception.IntegrationException: Could not perform the authorization request: bd.corp.[customer].com
+    481 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckValidator         : Could not perform the authorization request: bd.corp.[customer].com: System error
+    143 []  WARN 1 --- [taskScheduler-[]] com.zaxxer.hikari.pool.PoolBase          : HikariPool-[] - Failed to validate connection org.postgresql.jdbc.PgConnection@[] (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+     29 []  INFO 1 --- [taskScheduler-[]] c.s.i.a.c.p.l.ProvidersMissingTask       : ### Task::Class[com.synopsys.integration.alert.common.provider.lifecycle.ProvidersMissingTask] Task Finished
+     29 []  INFO 1 --- [taskScheduler-[]] c.s.i.a.c.p.l.ProvidersMissingTask       : ### Task::Class[com.synopsys.integration.alert.common.provider.lifecycle.ProvidersMissingTask] Task Started...
+     24 Caused by: java.net.UnknownHostException: blackduck.corp.[customer].com: System error
+     24 com.synopsys.integration.exception.IntegrationException: Could not perform the authorization request: blackduck.corp.[customer].com: System error
+     23 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckValidator         : Could not perform the authorization request: blackduck.corp.[customer].com
+     13 at com.synopsys.integration.blackduck.http.client.cache.CacheableResponse.throwExceptionForError(CacheableResponse.java:146)
+     13 at com.synopsys.integration.blackduck.http.client.cache.CachingHttpClient.throwExceptionForError(CachingHttpClient.java:92)
+     13 at com.synopsys.integration.blackduck.http.client.DefaultBlackDuckHttpClient.throwExceptionForError(DefaultBlackDuckHttpClient.java:122)
+     13 at com.synopsys.integration.rest.response.DefaultResponse.throwExceptionForError(DefaultResponse.java:214)
+     13 com.synopsys.integration.rest.exception.IntegrationRestException: There was a problem trying to GET https://bd.corp.[customer].com/api/projects/[]/versions/[]/components/[]/versions/[]?offset=0&limit=100, response was 404 Not Found.
+     13 [] DEBUG 1 --- [enerContainer-[]] c.s.i.a.p.b.c.u.AlertBlackDuckService    : There was a problem trying to GET https://bd.corp.[customer].com/api/projects/[]/versions/[]/components/[]/versions/[]?offset=0&limit=100, response was 404 Not Found.
+     13 [] ERROR 1 --- [enerContainer-[]] c.s.i.a.p.b.c.u.AlertBlackDuckService    : Could not retrieve the Bom component: There was a problem trying to GET https://bd.corp.[customer].com/api/projects/[]/versions/[]/components/[]/versions/[]?offset=0&limit=100, response was 404 Not Found.
+     12 []  WARN 1 --- [nio-8443-exec-[]] com.zaxxer.hikari.pool.PoolBase          : HikariPool-[] - Failed to validate connection org.postgresql.jdbc.PgConnection@[] (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+      5 Caused by: java.net.UnknownHostException: bd.corp.[customer].com: System error
+      5 com.synopsys.integration.exception.IntegrationException: Could not perform the authorization request: bd.corp.[customer].com: System error
+      5 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckValidator         : Could not perform the authorization request: bd.corp.[customer].com
+      5 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.w.scheduled.PhoneHomeTask        : Automatically trusting server certificates - not recommended for production use.
+      4 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.c.u.AlertBlackDuckService    : Could not retrieve the Bom component: Could not perform the authorization request: blackduck.corp.[customer].com
+      3 Caused by: java.net.UnknownHostException: [customer].webhook.office.com: System error
+      3 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.c.u.AlertBlackDuckService    : Could not retrieve the Project link: Could not perform the authorization request: blackduck.corp.[customer].com
+      3 [] TRACE 1 --- [taskScheduler-[]] c.s.i.a.p.b.task.BlackDuckAccumulator    : Header Authorization : Bearer []
+      3 [] TRACE 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckApiTokenValidator : Header Authorization : Bearer []
+      3 []  WARN 1 --- [io-8443-exec-[]] com.zaxxer.hikari.pool.PoolBase          : HikariPool-[] - Failed to validate connection org.postgresql.jdbc.PgConnection@[] (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+      2 Caused by: com.synopsys.integration.exception.IntegrationException: [customer].webhook.office.com: System error
+      2 com.synopsys.integration.alert.common.exception.AlertException: [customer].webhook.office.com: System error
+      2 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.task.BlackDuckDataSyncTask   : Could not retrieve the current data from the BlackDuck server: Could not perform the authorization request: blackduck.corp.[customer].com: System error
+      2 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.v.BlackDuckValidator         : Could not perform the authorization request: Connect to bd.corp.[customer].com:443 [bd.corp.[customer].com/[].28] failed: Connection timed out (Connection timed out)
+      2 keytool error: java.lang.Exception: Alias <blackduck_system> does not exist
+      1 Caused by: com.synopsys.integration.alert.common.exception.AlertException: [customer].webhook.office.com: System error
+      1 Caused by: java.net.ConnectException: Connection timed out (Connection timed out)
+      1 Caused by: org.apache.http.conn.HttpHostConnectException: Connect to bd.corp.[customer].com:443 [bd.corp.[customer].com/[].28] failed: Connection timed out (Connection timed out)
+      1 com.synopsys.integration.alert.common.exception.AlertException: Invalid global config settings. API Token is null.
+      1 com.synopsys.integration.exception.IntegrationException: Could not perform the authorization request: Connect to bd.corp.[customer].com:443 [bd.corp.[customer].com/[].28] failed: Connection timed out (Connection timed out)
+      1 com.synopsys.integration.exception.IntegrationException: [customer].webhook.office.com: System error
+      1 [] c.s.i.a.c.p.l.ProviderSchedulingManager  : Something went wrong while attempting to schedule provider tasks
+      1 [] c.s.i.a.c.p.l.ProvidersMissingTask       : Scheduling Task::Class[com.synopsys.integration.alert.common.provider.lifecycle.ProvidersMissingTask] with cron : 0 0 0/1 * * *
+      1 [] c.s.i.a.c.users.UserSystemValidator      : Default admin user email missing
+      1 [] c.s.i.a.c.w.task.StartupScheduledTask    : Task::Class[com.synopsys.integration.alert.common.provider.lifecycle.ProvidersMissingTask] next run:     04/22/2021 04:00 PM UTC
+      1 [] ERROR 1 --- [enerContainer-[]] c.s.i.a.channel.msteams.MsTeamsChannel   : Error occurred sending message:
+      1 [] ERROR 1 --- [enerContainer-[]] c.s.i.a.channel.msteams.MsTeamsChannel   : There was an error sending the message.
+      1 [] ERROR 1 --- [enerContainer-[]] c.s.i.a.channel.util.RestChannelUtility  : Error sending request
+      1 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.task.BlackDuckDataSyncTask   : Could not retrieve the current data from the BlackDuck server: Could not perform the authorization request: bd.corp.[customer].com
+      1 [] ERROR 1 --- [taskScheduler-[]] c.s.i.a.p.b.task.BlackDuckDataSyncTask   : Could not retrieve the current data from the BlackDuck server: Could not perform the authorization request: blackduck.corp.[customer].com
+      1 [] ERROR 1 --- [taskScheduler-[]] .VulnerabilityNotificationMessageBuilder : Could not construct the message: Could not perform the authorization request: blackduck.corp.[customer].com
+      1 keytool error: java.lang.Exception: Alias <blackduck_root> does not exist
+      1 keytool error: java.lang.Exception: Alias <hub.docker.com> does not exist
+      1 keytool error: java.lang.Exception: Alias <hub-root> does not exist
+      1 [] o.apache.tomcat.util.net.SSLHostConfig   : The protocol [TLSv1.3] was added to the list of protocols on the SSLHostConfig named [_default_]. Check if a +/- prefix is missing.
+      1 WARNING: Proxy certificate file is not found in secret. Skipping Proxy Certificate Import.
