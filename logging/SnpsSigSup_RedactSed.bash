@@ -3,22 +3,24 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2104290332Z
+#VERSION: 2104291139Z
 #CHANGES: pj clean up
 
 #PURPOSE: Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
+#REQUIREMENTS:
+# REQ: works with GNU bash, version 4.2.46(2)-release (x86_64-redhat-linux-gnu)
+# REQ: gnu parellel.  Can replace with xargs if desired. 
+
 #USAGE: date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/gi'                                                                                     
-
-
 #TODO
 
-#TODO: accumulate fairly list of strings that indicate error-level issue that may be overlooked because those log lines, for whatever reason, do not contain the string "ERROR".  
-#  grep -i -e"Exception: -e "Caused by" -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e "(could|does|can) ?n(o|')t" -e " a problem " -e "not found" -e "timed out" -e time.?out  
+#TODO: accumulate fairly long list of strings that indicate error-level issue that may be overlooked because those log lines, for whatever reason, do not contain the string "ERROR".  
+#  TODO: grep -i -e"Exception: -e "Caused by" -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e "(could|does|can) ?n(o|')t" -e " a problem " -e "not found" -e "timed out" -e time.?out  
+#  TODO: learn how to pass grep special characters into grep into gnu parallel.
 #TODO:  May want to leave in the first [0-9a-f] (in first few sed -e below; [4d7f6f0d393a] in example above), which I think is the container id.  There is only around 10 of them, and they should generally be the same for the same log lines.  If true, then may instead want to convert it to human-readable container name. 
-#TODO:  Refactor sed expressions. Probably could safely remove half of the first half by improvements learned in the bottom half. 
-#TODO:  Use gnu parallel? 
-
+#TODO:  Refactor,consolidate sed expressions, but maintain readability/supportability. Probably could safely remove half of the first half by improvements learned later as shown in the bottom half. 
+#TODO:  Use xargs or gnu parallel on this script for speed? 
 
 #MAIN
 
@@ -88,7 +90,7 @@ do
         -e 's/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) +[0-9]+ ..:..:../[date]/g' \
         -e 's/(collectd|containerd)\[[0-9]+\]/\1[]/g' \
         -e 's/((time|update) ?= ?)[0-9]+\.[0-9]{3}/\1[]/g' \
-        -e 's/(bdhub-blackduck-scan-|bdhub-blackduck-jobrunner-|bdhub-blackduck-webapp-logstash-|bdhub-blackduck-registration-)[0-9a-z-]+/\1[]/g' \
+        -e 's/(bdhub-blackduck-scan-|bdhub-blackduck-jobrunner-|bdhub-blackduck-webapp-logstash-|bdhub-blackduck-registration-|bdhub-blackduck-authentication-)[0-9a-z-]+/\1[]/g' \
         -e 's/....-..-.. ..:..:..,.../[date]/g' \
         -e 's/[0-9a-f]{8}-([0-9a-f-]{4}){3}[0-9a-f]{12}/[uuid]/g' \
         -e 's/pool-[0-9]+-thread-[0-9]+/pool-[]-thread-[]/g' \
@@ -99,6 +101,13 @@ do
         -e 's/(nodeId=)[0-9]+/\1[int]/g' \
         -e 's/(clientPath=).*/\1[path]/g' \
         -e 's/requested=[0-9]+, # processed=[0-9]+, # successes=[0-9]+, # failures=[0-9]+/requested=[int], # processed=[int], # successes=[int], # failures=[int]/g' \
+        -e 's/=[0-9]+,?/=[i],/g' \
+        -e 's/(update )[0-9]+/\1[i]/g' \
+        -e 's/(roots:|time:) [0-9]+/\1 [i]/g' \
+        -e 's#(name=|baseDir=).*?,#\1=[path]#g' \
+        -e 's/(Name:) .*?\|/\1 [name] |/g' \
+        -e 's/notifications: [0-9]+ | Total number of audit events: [0-9]+ | Latest timestamp: [0-9]+ | Latest audit event id: [0-9]+\]/notifications: [i] | Total number of audit events: [i] | Latest timestamp: [i] | Latest audit event id: [i]]/g' \
+        -e 's/id: [0-9]+ | Number of events pruned: [0-9]+ in .:..:..\..../id: [i] | Number of events pruned: [i] in [t]/g' \
 
 
         #keep a blank line above this one
