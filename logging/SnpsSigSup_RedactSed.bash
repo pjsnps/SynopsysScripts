@@ -4,17 +4,23 @@
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
 #VERSION: 2104290332Z
-#CHANGES: pj add Black Duck server system logs web ui download zip
+#CHANGES: pj clean up
 
 #PURPOSE: Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
 #USAGE: date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/gi'                                                                                     
 
-#NOTES: Designed for Black Duck system logs downloaded from web ui of format like:
-#   [4d7f6f0d393a] 2021-03-03 23:59:57,541Z[GMT] [pool-10-thread-43] INFO org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {tls}->http://10.251.20.33:8300->https://kb.blackducksoftware.com:443: The target server failed to respond
 
+#TODO
+
+#TODO: accumulate fairly list of strings that indicate error-level issue that may be overlooked because those log lines, for whatever reason, do not contain the string "ERROR".  
+#  grep -i -e"Exception: -e "Caused by" -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e "(could|does|can) ?n(o|')t" -e " a problem " -e "not found" -e "timed out" -e time.?out  
 #TODO:  May want to leave in the first [0-9a-f] (in first few sed -e below; [4d7f6f0d393a] in example above), which I think is the container id.  There is only around 10 of them, and they should generally be the same for the same log lines.  If true, then may instead want to convert it to human-readable container name. 
 #TODO:  Refactor sed expressions. Probably could safely remove half of the first half by improvements learned in the bottom half. 
+#TODO:  Use gnu parallel? 
+
+
+#MAIN
 
 while read -r line
 do
@@ -102,7 +108,8 @@ done
 
 exit
 #REFERENCE
-TODO: accumulate fairly list of strings that indicate error-level issue that may be overlooked because those log lines, for whatever reason, do not contain the string "ERROR".  Example:  "Exception:", "Caused by". 
+
+
 example:
 Download system log file .zip from Black Duck web ui (or command line?), unzip it, then find app-log files on date of interest, and summarize them:
 [pjalajas@sup-pjalajas-hub SynopsysScripts]$ find /tmp/bdhub-rtp02_bds_logs-20210428T195934 | grep app-log.*04-26 | parallel grep -i -e error -e fatal -e fail -e severe -e cannot -e time.?out -e exception: | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c 1-300 
