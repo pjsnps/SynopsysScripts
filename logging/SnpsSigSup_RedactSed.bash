@@ -3,12 +3,12 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2104262100Z
-#CHANGES: pj add Alert log redactions 
+#VERSION: 2104290332Z
+#CHANGES: pj add Black Duck server system logs web ui download zip
 
-#PURPOSE: Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. 
+#PURPOSE: Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
-#USAGE: date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/g'                                                                                     
+#USAGE: date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/gi'                                                                                     
 
 #NOTES: Designed for Black Duck system logs downloaded from web ui of format like:
 #   [4d7f6f0d393a] 2021-03-03 23:59:57,541Z[GMT] [pool-10-thread-43] INFO org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {tls}->http://10.251.20.33:8300->https://kb.blackducksoftware.com:443: The target server failed to respond
@@ -47,7 +47,7 @@ do
         -e 's/Content-Length:"[0-9]+"/Content-Length:"[]"/g' \
         -e 's/X-BDS-CorrelationID:"[0-9]+"/X-BDS-CorrelationID:"[]"/g' \
         -e 's/Date:".* GMT"/Date:"[] GMT"/g' \
-        -e 's/SQL State: [0-9A-Z]+/SQL State: []/g' \
+        -e 's/SQL ?State: [0-9A-Z]+/SQL State: []/g' \
         -e 's/Error Code: [0-9]+/Error Code: []/g' \
         -e 's/ERROR state [0-9]+ means/ERROR state [] means/g' \
         -e 's/when status=[0-9]+/when status=[]/g' \
@@ -76,9 +76,24 @@ do
         -e 's/(taskScheduler-)[0-9]+/\1[]/g' \
         -e 's/(n?io-8443-exec-)[0-9]+/\1[]/g' \
         -e 's/(PgConnection@)[0-9a-z]+/\1[]/g' \
-        -e 's/(enerContainer-)[0-9]+/\1[]/g' \
+        -e 's/(enerContainer-|scan-upload-|kb-api-pool-)[0-9]+/\1[]/g' \
         -e 's/(Bearer:? )[0-9a-zA-Z\._-]+/\1[]/g' \
         -e 's/(HikariPool-)[0-9]+/\1[]/g' \
+        -e 's/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) +[0-9]+ ..:..:../[date]/g' \
+        -e 's/(collectd|containerd)\[[0-9]+\]/\1[]/g' \
+        -e 's/((time|update) ?= ?)[0-9]+\.[0-9]{3}/\1[]/g' \
+        -e 's/(bdhub-blackduck-scan-|bdhub-blackduck-jobrunner-|bdhub-blackduck-webapp-logstash-|bdhub-blackduck-registration-)[0-9a-z-]+/\1[]/g' \
+        -e 's/....-..-.. ..:..:..,.../[date]/g' \
+        -e 's/[0-9a-f]{8}-([0-9a-f-]{4}){3}[0-9a-f]{12}/[uuid]/g' \
+        -e 's/pool-[0-9]+-thread-[0-9]+/pool-[]-thread-[]/g' \
+        -e 's/data: [0-9]+ files, [0-9]+ projects, [0-9]+ components/data: [int] files, [int] projects, [int] components/g' \
+        -e 's/parents: [0-9]+, updates: [0-9]+/parents: [int], updates: [int]/g' \
+        -e 's/After [0-9]+ ms./After [int] ms./g' \
+        -e 's/[0-9]+\.[0-9]+( sec after start)/[float]\1/g' \
+        -e 's/(nodeId=)[0-9]+/\1[int]/g' \
+        -e 's/(clientPath=).*/\1[path]/g' \
+        -e 's/requested=[0-9]+, # processed=[0-9]+, # successes=[0-9]+, # failures=[0-9]+/requested=[int], # processed=[int], # successes=[int], # failures=[int]/g' \
+
 
         #keep a blank line above this one
 #TODO: [bd.corp.[customer].com/[].28]  
@@ -87,8 +102,59 @@ done
 
 exit
 #REFERENCE
+TODO: accumulate fairly list of strings that indicate error-level issue that may be overlooked because those log lines, for whatever reason, do not contain the string "ERROR".  Example:  "Exception:", "Caused by". 
+example:
+Download system log file .zip from Black Duck web ui (or command line?), unzip it, then find app-log files on date of interest, and summarize them:
+[pjalajas@sup-pjalajas-hub SynopsysScripts]$ find /tmp/bdhub-rtp02_bds_logs-20210428T195934 | grep app-log.*04-26 | parallel grep -i -e error -e fatal -e fail -e severe -e cannot -e time.?out -e exception: | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c 1-300 
+     73 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.scan.bom.api.CodeNodeMatch []: Detected NULL BomEvidenceNode for: CodeNodeMatch{nodeId=[int], clientPath=[path]
+     49 at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92) [tomcat-embed-core-[].jar!/:[]]
+     46 com.blackducksoftware.core.validation.ValidationException: Unable to read report contents because it has not finished the report building process.
+     42 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=NO_ACTIVITIES_FOUND, kbUpdateTaskType=COMPONENT, # requested=[int], # processed=[int], # successes=[int], # failures=[int], fai
+     42 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=NO_ACTIVITIES_FOUND, kbUpdateTaskType=LICENSE, # requested=[int], # processed=[int], # successes=[int], # failures=[int], failu
+     37 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=NO_ACTIVITIES_FOUND, kbUpdateTaskType=NVD_VULNERABILITY, # requested=[int], # processed=[int], # successes=[int], # failures=[i
+     35 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=NO_ACTIVITIES_FOUND, kbUpdateTaskType=BDSA_VULNERABILITY, # requested=[int], # processed=[int], # successes=[int], # failures=[
+     31 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=NO_ACTIVITIES_FOUND, kbUpdateTaskType=COMPONENT_VERSION, # requested=[int], # processed=[int], # successes=[int], # failures=[i
+     11 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=SUCCESS, kbUpdateTaskType=COMPONENT_VERSION, # requested=[int], # processed=[int], # successes=[int], # failures=[int], failure
+      7 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=SUCCESS, kbUpdateTaskType=BDSA_VULNERABILITY, # requested=[int], # processed=[int], # successes=[int], # failures=[int], failur
+      5 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.kb.integration.domain.impl.KbUpdateTaskChain []: Completed a task: ActivityUpdateResults{overallResult=SUCCESS, kbUpdateTaskType=NVD_VULNERABILITY, # requested=[int], # processed=[int], # successes=[int], # failures=[int], failure
+      4 [bdhub-blackduck-registration-[]] [date]Z[GMT] [pool-[]-thread-[]] INFO  com.blackducksoftware.common.client.util - Command[[Ljava.lang.String;@[]  threw[java.io.IOException: Cannot run program "lsb_release": error=2, No such file or directory]
+      2 at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2497) ~[postgresql-[].jar!/:[]]
+      2 [bdhub-blackduck-jobrunner-[]] [date]Z[GMT] [kb-api-pool-[]] INFO  com.blackducksoftware.kb.match.client.KbMatchRestClientRetryPolicy []: Retrying on exception: class org.springframework.web.client.ResourceAccessException. Retry count: 1
+      2 Caused by: org.hibernate.exception.SQLGrammarException: could not extract ResultSet
+      2 Caused by: org.postgresql.util.PSQLException: ERROR: syntax error at or near ")"
+      2 org.springframework.dao.InvalidDataAccessResourceUsageException: could not extract ResultSet; SQL [n/a]; nested exception is org.hibernate.exception.SQLGrammarException: could not extract ResultSet
+      1 at reactor.core.publisher.FluxOnErrorResume$ResumeSubscriber.onNext(FluxOnErrorResume.java:73) ~[reactor-core-[].RELEASE.jar:[].RELEASE]
+      1 [bdhub-blackduck-jobrunner-[]] [date]Z[GMT] [kb-api-pool-[]] ERROR com.blackducksoftware.kb.match.client.KbMatchRestClient []: Exception in getBestMatches(signatureVersion, projectDescriptor). After [int] ms.
+      1 [bdhub-blackduck-jobrunner-[]] [] ERROR com.blackducksoftware.core.security.impl.RunAsService []: runasservice
+      1 [bdhub-blackduck-jobrunner-[]] [] ERROR com.blackducksoftware.job.core.api.execution.TaskStateNotifier []: Failed JobInstance{ID=[], Status=FAILED, Assigned worker=jobrunner_bdhub-blackduck-jobrunner-[], Scheduled at=[]Z, Error text=Error in job execution: reactor.core.Exceptions$ReactiveExc
+      1 [bdhub-blackduck-jobrunner-[]] [] ERROR com.blackducksoftware.scan.bom.job.ScanAutoBomJob []: Scan auto BOM job failed [Scan id: [] | Message: java.lang.RuntimeException: reactor.core.Exceptions$ReactiveException: java.util.concurrent.TimeoutException: Did not observe any item or terminal si
+      1 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.scan.siggen.impl.ScannerApi []: ScanId [] updated to status ERROR [float] sec after start (msg: java.lang.RuntimeException: reactor.core.Exceptions$ReactiveException: java.util.concurrent.TimeoutException: Did not observe any item
+      1 [bdhub-blackduck-jobrunner-[]] [] INFO  com.blackducksoftware.scan.siggen.impl.ScannerApi []: ScanId [] updated to status ERROR [float] sec after start (msg: reactor.core.Exceptions$ReactiveException: java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within [
+      1 [bdhub-blackduck-registration-[]] [date]Z[GMT] [BDSBackgroundRenewalWorker] INFO  com.blackducksoftware.common.client.util - Command[[Ljava.lang.String;@[]  threw[java.io.IOException: Cannot run program "lsb_release": error=2, No such file or directory]
+      1 [bdhub-blackduck-scan-[]] [] ERROR org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/].[scan-api-mvc] - Servlet.service() for servlet [scan-api-mvc] in context with path [] threw exception
+      1 [bdhub-blackduck-webapp-logstash-[]] [] ERROR com.blackducksoftware.core.rest.server.RestExceptionViewConverter - Exception stack trace:
+      1 [bdhub-blackduck-webapp-logstash-[]] [] ERROR com.blackducksoftware.core.rest.server.RestExceptionViewConverter - Handling exception for url: 'https://bdhub-rtp02.customer.com/api/projects/[]/versions/[]/source-trees', logRef: 'hub-webapp_[]', locale: 'en_US', msg: could not extract ResultSet; 
+      1 [bdhub-blackduck-webapp-logstash-[]] [] ERROR org.hibernate.engine.jdbc.spi.SqlExceptionHelper - ERROR: syntax error at or near ")"
+      1 [bdhub-blackduck-webapp-logstash-[]] [] WARN  com.blackducksoftware.core.validation.db.impl.DbConstraintAspect - Handling DB Constraint error: could not extract ResultSet; SQL [n/a]; nested exception is org.hibernate.exception.SQLGrammarException: could not extract ResultSet, args: [[]]
+      1 [bdhub-blackduck-webapp-logstash-[]] [] WARN  com.blackducksoftware.core.validation.db.impl.DbConstraintViolationRetriever - Constraint name retrieval results [Name: null | Original class: org.postgresql.util.PSQLException | Message: ERROR: syntax error at or near ")"
+      1 [bdhub-blackduck-webapp-logstash-[]] [] WARN  org.hibernate.engine.jdbc.spi.SqlExceptionHelper - SQL Error: 0, SQL State: []
+      1 Caused by: java.net.SocketTimeoutException: Read timed out
+      1 Caused by: java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within []ms (and no fallback has been configured)
+      1 Caused by: reactor.core.Exceptions$ReactiveException: java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within []ms (and no fallback has been configured)
+      1 java.lang.NullPointerException: null
+      1 java.lang.RuntimeException: reactor.core.Exceptions$ReactiveException: java.util.concurrent.TimeoutException: Did not observe any item or terminal signal within []ms (and no fallback has been configured)
+      1 org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://kb.blackducksoftware.com:443/kbmatch/api/v1/matches/best": Read timed out; nested exception is java.net.SocketTimeoutException: Read timed out
+      1 Suppressed: java.lang.Exception: #block terminated with an error
+
+
+
+
+
+
+
 
 example:
+
 [pjalajas@sup-pjalajas-hub SynopsysScripts]$ date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/g'                                                                                     
 Mon Apr 26 21:50:41 UTC 2021
 webserver

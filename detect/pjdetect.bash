@@ -213,14 +213,15 @@ JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS" bash <(curl -k -s -L https://detect.synop
     --blackduck.password='blackduck' \
 \
     --detect.source.path="${DETECTSOURCEPATHMOD}" \
-    --detect.project.name="${PN}" \
-    --detect.project.version.name="${PVN}" \
+    --detect.project.name="detect" \
+    --detect.project.version.name="6.9.1" \
     --detect.project.version.notes="${PN}\ ${PVN}\ pjalajas@synopsys.com" \
 \
     --detect.included.detector.types=ALL \
     --detect.tools=ALL \
-    --logging.level.com.synopsys.integration=INFO \
+    --logging.level.com.synopsys.integration=TRACE \
     --detect.detector.search.depth=200 \
+    --detect.project.codelocation.unmap=true \
 \
 \
 
@@ -229,6 +230,8 @@ exit # NOTE: keep at least one blank line above this exit command.
 
 #REFERENCE
 : '
+    --detect.project.name="${PN}" \
+    --detect.project.version.name="${PVN}" \
     --blackduck.url='https://sup-pjalajas-2.dc1.lan' \
     --detect.included.detector.types=GO_MOD \
     --detect.tools=DETECTOR \
