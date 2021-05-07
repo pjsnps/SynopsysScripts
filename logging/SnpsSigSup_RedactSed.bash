@@ -3,10 +3,13 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2104291139Z
-#CHANGES: pj clean up
+#VERSION: 20210507T1710ZPJ
+#CHANGES: pj try to fix possible too-greedy sed?:     
+   #1416 []
+   # 375 [] WARN  org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor - DB: there is already a transaction in progress (SQL State: [] - Error Code: [])
+        #-e 's/2021-.*(\[[0-9a-f])?.*https-.*exec-[0-9]{1,4}\]/[sed34]/g' \
 
-#PURPOSE: Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
+#PURPOSE: A work in progress, under active development; suggestions, corrections welcome!  Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
 #REQUIREMENTS:
 # REQ: works with GNU bash, version 4.2.46(2)-release (x86_64-redhat-linux-gnu)
@@ -28,28 +31,27 @@ while read -r line
 do
   echo "$line" | \
     sed -r \
-        -e 's/2021.*\[GMT\]~: /[] /g' \
-        -e 's/2021-.*(\[[0-9a-f])?.*https-.*exec-[0-9]{1,4}\]/[]/g' \
-        -e 's/2021-.*\[[0-9a-f].*pool-[0-9]*-thread-[0-9]*\]/[]/g' \
-        -e 's/2021-.*(\[[0-9a-f])?.*jobRunner-[0-9]*\]/[]/g' \
-        -e 's/2021-.*\[[0-9a-f].*BDSBackgroundRenewalWorker\]/[]/g' \
-        -e 's/2021-.*\[[0-9a-f].*kb-api-pool-[0-9]+\]/[]/g' \
-        -e 's/2021-.*\[[0-9a-f].*jobTaskScheduler-[0-9]+\]/[]/g' \
-        -e 's/2021-.*\[[0-9a-f].*main\]/[]/g' \
-        -e 's/2021-.*(\[[0-9a-f])?.*main\]/[]/g' \
-        -e 's/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/[]/g' \
-        -e 's/(hub-[a-z]+_)[A-Za-z0-9]+/\1[]/g' \
-        -e 's/HHH[0-9]+/[]/g' \
-        -e 's/ duration: [0-9]+\.[0-9]+ / duration: [] /g' \
-        -e 's/Ljava.lang.String\;\@[0-9a-f]+\]/Ljava.lang.String;@[] /g' \
-        -e 's/ duration: [0-9]+\.[0-9]+E-?[0-9]+ / duration: [] /g' \
-        -e 's/ [0-9]+ms/ []ms/g' \
-        -e 's/After [0-9]{1,2} ms./After [] ms./g' \
-        -e 's/versionBomId=[0-9]+/versionBomId=[]/g' \
-        -e 's/(created|updated)At=20[0-9]{2}-[01][0-9]-[0-3][0-9]T[0-2][0-9](:[0-5][0-9]){2}\.[0-9]*Z/\1At=[]/g' \
-        -e 's/\[\] *\[\]/[]/g' \
-        -e 's/2021.*\[(warning|error)\] /[] [\1]/g' \
-        -e 's/\<[0-9]+\.[0-9]+\.[0-9]+\>/[]/g' \
+        -e 's/2021.*\[GMT\]~: /[sed33] /g' \
+        -e 's/2021-.*\[[0-9a-f].*pool-[0-9]*-thread-[0-9]*\]/[sed35]/g' \
+        -e 's/2021-.*(\[[0-9a-f])?.*jobRunner-[0-9]*\]/[sed36]/g' \
+        -e 's/2021-.*\[[0-9a-f].*BDSBackgroundRenewalWorker\]/[sed37]/g' \
+        -e 's/2021-.*\[[0-9a-f].*kb-api-pool-[0-9]+\]/[sed38]/g' \
+        -e 's/2021-.*\[[0-9a-f].*jobTaskScheduler-[0-9]+\]/[sed39]/g' \
+        -e 's/2021-.*\[[0-9a-f].*main\]/[sed40]/g' \
+        -e 's/2021-.*(\[[0-9a-f])?.*main\]/[sed41]/g' \
+        -e 's/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/[sed42]/g' \
+        -e 's/(hub-[a-z]+_)[A-Za-z0-9]+/\1[sed43]/g' \
+        -e 's/HHH[0-9]+/[sed44]/g' \
+        -e 's/ duration: [0-9]+\.[0-9]+ / duration: [sed45] /g' \
+        -e 's/Ljava.lang.String\;\@[0-9a-f]+\]/Ljava.lang.String;@[sed46] /g' \
+        -e 's/ duration: [0-9]+\.[0-9]+E-?[0-9]+ / duration: [sed47] /g' \
+        -e 's/ [0-9]+ms/ [sed48]ms/g' \
+        -e 's/After [0-9]{1,2} ms./After [sed49] ms./g' \
+        -e 's/versionBomId=[0-9]+/versionBomId=[sed50]/g' \
+        -e 's/(created|updated)At=20[0-9]{2}-[01][0-9]-[0-3][0-9]T[0-2][0-9](:[0-5][0-9]){2}\.[0-9]*Z/\1At=[sed51]/g' \
+        -e 's/\[\] *\[\]/[sed52]/g' \
+        -e 's/2021.*\[(warning|error)\] /[sed53] [\1]/g' \
+        -e 's/\<[0-9]+\.[0-9]+\.[0-9]+\>/[sed54]/g' \
         -e 's/\.[0-9]+\:[0-9]+/[]/g' \
         -e 's/channel [0-9]+/channel []/g' \
         -e 's/Content-Length:"[0-9]+"/Content-Length:"[]"/g' \
@@ -108,9 +110,17 @@ do
         -e 's/(Name:) .*?\|/\1 [name] |/g' \
         -e 's/notifications: [0-9]+ | Total number of audit events: [0-9]+ | Latest timestamp: [0-9]+ | Latest audit event id: [0-9]+\]/notifications: [i] | Total number of audit events: [i] | Latest timestamp: [i] | Latest audit event id: [i]]/g' \
         -e 's/id: [0-9]+ | Number of events pruned: [0-9]+ in .:..:..\..../id: [i] | Number of events pruned: [i] in [t]/g' \
-
+        -e 's/(ConnectionHolder@)[0-9a-f]+/\1[sed113]/g' \
+        -e 's/[0-9]+( bytes data)/[sed114]\1/g' \
+        -e 's/(http-outgoing-)[0-9]+/\1[sed115]/g' \
+        -e 's/.[0-9]+ - /.[sed116i] - /g' \
+        -e 's/(Closing connection )[0-9]+/\1[sed117i]/g' \
+        -e 's/(Length: )[0-9]+/\1[sed118i]/g' \
+        -e 's/(Sun|Mon|Tue|Wed|Thu|Fri|Sat), [0-9]+/[sed119a], [sed119d]/g' \
+        -e 's/[0-9]+ out of [0-9]+ bytes/[sed120i] out of [sed120i] bytes/g' \
 
         #keep a blank line above this one
+# -e 's/2021-.*?(\[[0-9a-f])?.*?https-.*exec-[0-9]{1,4}\]/[sed34]/g' \
 #TODO: [bd.corp.[customer].com/[].28]  
 done
 
