@@ -3,7 +3,7 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-10
 #LICENSE : SPDX Apache-2.0
-#VERSION: 20210318T0238
+#VERSION: 2105120215Z
 #CHANGES: pj actually, don't use this script, little benefit to filter by timestamp, hard to do perfectly.  
 
 #PURPOSE: Reads log lines in from pipe. Outputs lines between lines with datestamps matching sed regex expressions in command line position $1 and $2. Lines, between those line, with no timestamp are also output.  For piping into SnpsSigSup_GreatPrepender.bash.
