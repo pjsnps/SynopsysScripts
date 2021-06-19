@@ -3,11 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 20210507T1710ZPJ
-#CHANGES: pj try to fix possible too-greedy sed?:     
-   #1416 []
-   # 375 [] WARN  org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor - DB: there is already a transaction in progress (SQL State: [] - Error Code: [])
-        #-e 's/2021-.*(\[[0-9a-f])?.*https-.*exec-[0-9]{1,4}\]/[sed34]/g' \
+#VERSION: 2106150152Z
+#CHANGES: pj continue add detect logs for package managers
 
 #PURPOSE: A work in progress, under active development; suggestions, corrections welcome!  Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
@@ -37,8 +34,8 @@ do
         -e 's/2021-.*\[[0-9a-f].*BDSBackgroundRenewalWorker\]/[sed37]/g' \
         -e 's/2021-.*\[[0-9a-f].*kb-api-pool-[0-9]+\]/[sed38]/g' \
         -e 's/2021-.*\[[0-9a-f].*jobTaskScheduler-[0-9]+\]/[sed39]/g' \
-        -e 's/2021-.*\[[0-9a-f].*main\]/[sed40]/g' \
-        -e 's/2021-.*(\[[0-9a-f])?.*main\]/[sed41]/g' \
+        -e 's/2021-.*\[[0-9a-f].*main\]/[sed40-date_main]/g' \
+        -e 's/2021-.*(\[[0-9a-f])?.*main\]/[sed41-date_main]/g' \
         -e 's/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/[sed42]/g' \
         -e 's/(hub-[a-z]+_)[A-Za-z0-9]+/\1[sed43]/g' \
         -e 's/HHH[0-9]+/[sed44]/g' \
@@ -118,9 +115,28 @@ do
         -e 's/(Length: )[0-9]+/\1[sed118i]/g' \
         -e 's/(Sun|Mon|Tue|Wed|Thu|Fri|Sat), [0-9]+/[sed119a], [sed119d]/g' \
         -e 's/[0-9]+ out of [0-9]+ bytes/[sed120i] out of [sed120i] bytes/g' \
+        -e 's/("scanTime":)[0-9]+,("timeLastModified":)[0-9]+,/\1[sed121i],\2[sed121i],/g' \
+        -e 's/("numDirs":)[0-9]+,/\1[sed119i],/g' \
+        -e 's/("numNonDirFiles":)[0-9]+,/\1[sed120i],/g' \
+        -e 's/("scanType":"FS","name":)".*?",/\1"[sed121a]",/g' \
+        -e 's/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) +[0-9]+, 20[0-9]{2} .+:..:.. [AaPp]M/[sed122-date]/g' \
+        -e 's/20..-..-.. ..:..:.. UTC/[sed123-date]/g' \
+        -e 's/-[0-9]+-[0-9]+-[0-9]+-build/[sed124-ver]-build/g' \
+        -e 's/SBT-[0-9]+/SBT-[i]/g' \
+        -e 's/[0-9]+ of [0-9]+ \([0-9]+%\)/[i] of [i] ([i]%)/g' \
+        -e "s/(Executing command .bitbake -g ).*?(. returned a non-zero exit code )[0-9]+/\1[sed127-pkgname]\2[sed127-i]/g" \
+        -e "s/(Failed to extract a Code Location while running Bitbake against package .).*?/\1[sed128-pkgname]\'/g" \
+        -e 's/(npm ERR.*missing. ).*?(, required by ).*/\1[sed129-pkgname]\2[sed129-pkgname]/g' \
+        -e 's#(npm ERR. extraneous: ).*#\1[sed130_pkg_path]#g' \
+        -e 's#(npm ERR. invalid: ).*#\1[sed131_pkg_path]#g' \
 
-        #keep a blank line above this one
-# -e 's/2021-.*?(\[[0-9a-f])?.*?https-.*exec-[0-9]{1,4}\]/[sed34]/g' \
+#     10 npm ERR! missing: b@file:../b, required by a@[sed54]
+#     10 [sed41] --- npm ERR! missing: b@^[sed54], required by a@[sed54]
+#     10 [sed41] --- npm ERR! missing: feed@[sed54], required by extraneous-node-modules
+
+
+
+        #keep at least one blank line above this one
 #TODO: [bd.corp.[customer].com/[].28]  
 done
 

@@ -2,8 +2,8 @@
 #SCRIPT: SnpsSigSup_RecursiveExpander.bash
 #AUTHOR: pjalajas@blackducksoftware.com, pjalajas@synopsys.com
 #DATE: 2016-02-12, 2020-10-23, 2020-11-11
-#VERSION:  2101181626Z
-#CHANGES:  pj add NOTE that expanded output is where the source is
+#VERSION:  2106150343Z
+#CHANGES:  pj grep -v CPAN linktext and encrypt-standard.zip 
 #LICENSE:  SPDX Apache-2.0
 #SUPPORT:  https://community.synopsys.com, https://www.synopsys.com/software-integrity/support.html, Software-integrity-support@synopsys.com
 
@@ -176,7 +176,9 @@ do
        # TODO:  ADD 7zip
        #|tar|zip|ear|ipa|apk|gem|war|tbz2|tbz|tgz|tb2|gz|bz2)$")" # TO BE SUPPORTED EXTENSIONS
   #parallel f_main "{}" ::: "$(find "${1}" -type f -regextype posix-extended -iregex ".*\.(gz|tar|tar.gz|tbz|tbz2|zip)$")"  # CURRENTLY SUPPORTED EXTENSIONS
-  parallel f_main "{}" ::: "$(find "${1}" -type f -regextype posix-extended -iregex ".*\.(${msupportedstring})$")"  # CURRENTLY SUPPORTED EXTENSIONS
+  #parallel f_main "{}" ::: "$(find "${1}" -type f -regextype posix-extended -iregex ".*\.(${msupportedstring})$")"  # CURRENTLY SUPPORTED EXTENSIONS
+  #parallel f_main "{}" ::: "$(find "${1}" -type f -regextype posix-extended -iregex ".*\.(${msupportedstring})$" | grep -v -e CPANTESTS_FOLLOW -e linktest -e encrypt-standard.zip)"  # CURRENTLY SUPPORTED EXTENSIONS
+  parallel f_main "{}" ::: "$(find "${1}" -type f -regextype posix-extended -iregex ".*\.(${msupportedstring})$" -not -name "encrypt-standard.zip" | grep -v -e CPANTESTS_FOLLOW -e linktest -e encrypt-standard.zip)"  # CURRENTLY SUPPORTED EXTENSIONS
 
 done  # while mexpanded=true, while we expanded (or tried) something...
 
