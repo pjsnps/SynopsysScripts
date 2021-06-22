@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-10
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2105120223Z
-#CHANGE: pj working on: ~: 2021-05-07 20:14:35,242Z[GMT] [scan-upload-0] ERROR com.blackducksoftware.scan.siggen.impl.BlackDuckInputOutputService - Failed saving document data for document null
+#VERSION: 2106222016Z
+#CHANGE: pj working on: adding '[ade2d032d2ac] 10.60.16.242 - - [22/Jun/2021:05:50:02 +0000] "GET ' log line format
 
 #PURPOSE: Reads log lines in from pipe. If a line doesn't have a timestamp (like stack staces), this will prepend that line with the last known good timestamp.
 
@@ -18,17 +18,46 @@ do
   #does it have a timestamp in the first few space-separated words?
   #  delete singleleading and trailing space
   #  TIMETEST='2021-05-07 20:14:35,242Z[GMT] [scan-upload-0] ERROR'
+  #    try to add:  [22/Jun/2021:05:49:55 +0000]
+  #echo \'$line\'
 
-  TIMETEST=$(echo "$line" | \
-    cut -d\  -f1-4 | \
-    grep -Po "20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9](:[0-5][0-9]){2},[0-9]+Z\[GMT\]" # | \
-  )
+  #TIMETEST=$(echo "$line" | \
+  #  cut -d\  -f1-4 | \
+  #  grep -Po "20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9](:[0-5][0-9]){2},[0-9]+Z\[GMT\]" # | \
+  #)
+  TIMETEST=$(echo "$line" | cut -d\  -f1-4 | grep -Po "20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9](:[0-5][0-9]){2},[0-9]+Z\[GMT\]")
+  echo 29:TIMETEST=\'$TIMETEST\'
+  #date: invalid date ‘2021-06-22 05:50:03,099Z[GMT]’
+  TIMETEST=$(echo $TIMETEST | sed -re 's/ /T/' -e 's/,/./' -e 's/\[GMT\]//') 2>/dev/null
+  echo 31:TIMETEST=\'$TIMETEST\'
     #sed -re 's/^\s?(.*)\s?$/\1/g'
+  if [[ "$TIMETEST" == "" ]] ; then
+    #wasn't YYYY-MM-DD HH:MM:SS,SSSZ[GMT]   # yeah, it has Z and GMT...
+    #try test if 22/Jun/2021:05:49:55 +0000   format...
+    #    '[ade2d032d2ac] 10.60.16.242 - - [22/Jun/2021:05:50:02 +0000] "GET ' log line format
+  TIMETEST=$(echo "$line" | \
+    cut -d\  -f5-6 | \
+    grep -Po '[0-3]?[0-9]/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/20[0-9]{2}:[0-2][0-9]:[0-5][0-9]:[0-5][0-9] \+0000' # | \
+  )
+    #echo 37:TIMETEST=\'$TIMETEST\'
+    #grep -Po '22/Jun/2021:05:49:55 \+0000' # | \
+    #grep -Po "\[[0-3][0-9]/(Jan|Feb|Jun)/20[0-9]{2}:[0-5][0-9]:[0-5][0-9] \+[0-9]{4}\]" # | \
+    #grep -Po "\[[0-3][0-9]/(Jan|Feb|Jun)/20[0-9]{2}:[0-5][0-9]:[0-5][0-9] \+[0-9]{4}\]" # | \
+    #[pjalajas@sup-pjalajas-hub N00862113]$ TIMETEST='22/Jun/2021:05:12:34 +0000' ; date -d "$(echo $TIMETEST|tr '/' '-' | sed -re 's#(20[0-9]{2}):#\1 #')"                                     Tue Jun 22 01:12:34 EDT 2021
+    #[pjalajas@sup-pjalajas-hub N00862113]$ TIMETEST='22/Jun/2021:05:12:34 +0000' ; date --utc -d "$(echo $TIMETEST|tr '/' '-' | sed -re 's#(20[0-9]{2}):#\1 #')"                               Tue Jun 22 05:12:34 UTC 2021
+    #[pjalajas@sup-pjalajas-hub N00862113]$ TIMETEST='22/Jun/2021:05:12:34 +0930' ; date --utc -d "$(echo $TIMETEST|tr '/' '-' | sed -re 's#(20[0-9]{2}):#\1 #')"                               Mon Jun 21 19:42:34 UTC 2021
+    TIMETEST="$(  date --utc -d "  $(echo $TIMETEST|tr '/' '-' | sed -re 's#(20[0-9]{2}):#\1 #')"   )"
+    #echo 45:TIMETEST=\'$TIMETEST\'
+  fi
 
 
     #
-    #echo TIMETEST=\'$TIMETEST\'
+  #  echo 45:TIMETEST=\'$TIMETEST\'
   if [[ "$TIMETEST" > "" ]] ; then
+    #sanityize it:
+    #[pjalajas@sup-pjalajas-hub N00862113]$ date -d"2021-06-22T05:50:02.000000000Z"
+    #Tue Jun 22 01:50:02 EDT 2021
+    TIMETEST="$(date --utc +%Y-%m-%dT%H:%M:%S.%NZ -d"$TIMETEST")"
     #if so, then store its timestamp in LASTKNOWNTIME
     LASTKNOWNTIME=$TIMETEST
     ESTIMATED=" "
