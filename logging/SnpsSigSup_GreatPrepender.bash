@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-10
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2106222016Z
-#CHANGE: pj working on: adding '[ade2d032d2ac] 10.60.16.242 - - [22/Jun/2021:05:50:02 +0000] "GET ' log line format
+#VERSION: 2106222338Z
+#CHANGE: pj rm echos 
 
 #PURPOSE: Reads log lines in from pipe. If a line doesn't have a timestamp (like stack staces), this will prepend that line with the last known good timestamp.
 
@@ -26,10 +26,10 @@ do
   #  grep -Po "20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9](:[0-5][0-9]){2},[0-9]+Z\[GMT\]" # | \
   #)
   TIMETEST=$(echo "$line" | cut -d\  -f1-4 | grep -Po "20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9](:[0-5][0-9]){2},[0-9]+Z\[GMT\]")
-  echo 29:TIMETEST=\'$TIMETEST\'
+  #echo 29:TIMETEST=\'$TIMETEST\'
   #date: invalid date ‘2021-06-22 05:50:03,099Z[GMT]’
   TIMETEST=$(echo $TIMETEST | sed -re 's/ /T/' -e 's/,/./' -e 's/\[GMT\]//') 2>/dev/null
-  echo 31:TIMETEST=\'$TIMETEST\'
+  #echo 31:TIMETEST=\'$TIMETEST\'
     #sed -re 's/^\s?(.*)\s?$/\1/g'
   if [[ "$TIMETEST" == "" ]] ; then
     #wasn't YYYY-MM-DD HH:MM:SS,SSSZ[GMT]   # yeah, it has Z and GMT...
