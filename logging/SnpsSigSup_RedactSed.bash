@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2106150152Z
-#CHANGES: pj continue add detect logs for package managers
+#VERSION: 2107090423Z
+#CHANGES: pj add ondemand-1_Worker-264
 
 #PURPOSE: A work in progress, under active development; suggestions, corrections welcome!  Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
@@ -15,6 +15,7 @@
 #USAGE: date --utc ; hostname -f ; pwd ; cat /tmp/alert-april23.text | grep -i -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e Exception: -e "(could|does|can) ?not" -e " a problem " -e "not found" -e "timed out" | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash | sort | uniq -c | sort -k1nr | cut -c1-300 | sed -re 's/(customername|cstmrnick)/[customer]/gi'                                                                                     
 #TODO
 
+#TODO: sort by most greedy first, I think, to prevent [a][b], should be just [a] (or just [b] if b is longer, I think)
 #TODO: accumulate fairly long list of strings that indicate error-level issue that may be overlooked because those log lines, for whatever reason, do not contain the string "ERROR".  
 #  TODO: grep -i -e"Exception: -e "Caused by" -e error -e fatal -e severe -e fail -e wrong -e invalid -e missing -e "(could|does|can) ?n(o|')t" -e " a problem " -e "not found" -e "timed out" -e time.?out  
 #  TODO: learn how to pass grep special characters into grep into gnu parallel.
@@ -36,7 +37,7 @@ do
         -e 's/2021-.*\[[0-9a-f].*jobTaskScheduler-[0-9]+\]/[sed39]/g' \
         -e 's/2021-.*\[[0-9a-f].*main\]/[sed40-date_main]/g' \
         -e 's/2021-.*(\[[0-9a-f])?.*main\]/[sed41-date_main]/g' \
-        -e 's/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/[sed42]/g' \
+        -e 's/[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/[sed42-uuid]/g' \
         -e 's/(hub-[a-z]+_)[A-Za-z0-9]+/\1[sed43]/g' \
         -e 's/HHH[0-9]+/[sed44]/g' \
         -e 's/ duration: [0-9]+\.[0-9]+ / duration: [sed45] /g' \
@@ -48,23 +49,23 @@ do
         -e 's/(created|updated)At=20[0-9]{2}-[01][0-9]-[0-3][0-9]T[0-2][0-9](:[0-5][0-9]){2}\.[0-9]*Z/\1At=[sed51]/g' \
         -e 's/\[\] *\[\]/[sed52]/g' \
         -e 's/2021.*\[(warning|error)\] /[sed53] [\1]/g' \
-        -e 's/\<[0-9]+\.[0-9]+\.[0-9]+\>/[sed54]/g' \
-        -e 's/\.[0-9]+\:[0-9]+/[]/g' \
+        -e 's/\<[0-9]+\.[0-9]+\.[0-9]+\>/[sed54-i.i.i]/g' \
+        -e 's/\.[0-9]+\:[0-9]+/[sed52-i:i]/g' \
         -e 's/channel [0-9]+/channel []/g' \
-        -e 's/Content-Length:"[0-9]+"/Content-Length:"[]"/g' \
-        -e 's/X-BDS-CorrelationID:"[0-9]+"/X-BDS-CorrelationID:"[]"/g' \
-        -e 's/Date:".* GMT"/Date:"[] GMT"/g' \
-        -e 's/SQL ?State: [0-9A-Z]+/SQL State: []/g' \
-        -e 's/Error Code: [0-9]+/Error Code: []/g' \
-        -e 's/ERROR state [0-9]+ means/ERROR state [] means/g' \
-        -e 's/when status=[0-9]+/when status=[]/g' \
+        -e 's/Content-Length:"[0-9]+"/Content-Length:"[sed-54-i]"/g' \
+        -e 's/X-BDS-CorrelationID:"[0-9]+"/X-BDS-CorrelationID:"[sed55-id]"/g' \
+        -e 's/Date:".* GMT"/Date:"[sed56-date] GMT"/g' \
+        -e 's/SQL ?State: [0-9A-Z]+/SQL State: [sed57-sql]/g' \
+        -e 's/Error Code: [0-9]+/Error Code: [sed58-errcode]/g' \
+        -e 's/ERROR state [0-9]+ means/ERROR state [sed59-errstate] means/g' \
+        -e 's/when status=[0-9]+/when status=[sed60-status]/g' \
         -e 's/^.*dockerd\[[0-9]+]: time="....-..-..T..:..:..\.[0-9]+-..:.."/dockerd[] time=[]/g' \
         -e 's/network .*_default not found/network []_default not found/g' \
-        -e 's/ID:[0-9a-z]{25}/ID:[]/g' \
-        -e 's/Index:[0-9]+/Index:[]/g' \
-        -e 's/sha256:[a-f0-9]+/sha256:[]/g' \
+        -e 's/ID:[0-9a-z]{25}/ID:[sed63-alnum]/g' \
+        -e 's/Index:[0-9]+/Index:[sed64-i]/g' \
+        -e 's/sha256:[a-f0-9]+/sha256:[sed65-hex]/g' \
         -e 's/....-..-..T..:..:..\.[0-9]+Z/[]Z/g' \
-        -e 's#blackducksoftware/[a-z\-]+#blackducksoftware/[]#g' \
+        -e 's#blackducksoftware/[a-z\-]+#blackducksoftware/[sed67]#g' \
         -e 's/Name:[a-z0-9_-]+/Name:[]/g' \
         -e 's/VOLUME [a-z0-9_-]+-data-/VOLUME []-data-/g' \
         -e 's/namespace: [a-z0-9_-]+/namespace: []/g' \
@@ -83,7 +84,7 @@ do
         -e 's/(taskScheduler-)[0-9]+/\1[]/g' \
         -e 's/(n?io-8443-exec-)[0-9]+/\1[]/g' \
         -e 's/(PgConnection@)[0-9a-z]+/\1[]/g' \
-        -e 's/(enerContainer-|scan-upload-|kb-api-pool-)[0-9]+/\1[]/g' \
+        -e 's/(enerContainer-|scan-upload-|kb-api-pool-)[0-9]+/\1[sed86-i]/g' \
         -e 's/(Bearer:? )[0-9a-zA-Z\._-]+/\1[]/g' \
         -e 's/(HikariPool-)[0-9]+/\1[]/g' \
         -e 's/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) +[0-9]+ ..:..:../[date]/g' \
@@ -129,7 +130,24 @@ do
         -e 's/(npm ERR.*missing. ).*?(, required by ).*/\1[sed129-pkgname]\2[sed129-pkgname]/g' \
         -e 's#(npm ERR. extraneous: ).*#\1[sed130_pkg_path]#g' \
         -e 's#(npm ERR. invalid: ).*#\1[sed131_pkg_path]#g' \
+        -e 's/(attempt #)[0-9]+/\1[sed132-i]/g' \
+        -e 's/\[[0-9a-f]+\]/[sed133-hex]/g' \
+        -e 's/user name: hubauto(user name: ).*? /\1[sed134-username]/g' \
+        -e 's/(Accessor|Proxy)[0-9]+\./\1[sed135-i]./g' \
+        -e 's/(jobrunner_)[0-9a-f]+/\1[sed136-hex]/g' \
+        -e 's/(id=)[0-9a-zA-Z_]+(, Registration)/\1[sed137-key]\2/g' \
+        -e 's/(A cookie header was received).*( that contained an invalid cookie)/\1[sed142-cookie]\2/g' \
+        -e 's/(version=).*(, phase=)/\1[sed139-name]\2/g' \
+        -e 's/(Optional.of)\([0-9]+\)/\1([sed140-i])/g' \
+        -e 's/(Task\@)[0-9a-f]+/\1[sed141-hex]/g' \
+        -e "s#(vulnerabilities/)[A-Z0-9-]+'#\1[sed142-vuln]#g" \
+        -e "s/(&q=).*?('|&)/\1[sed143-query]\2/g" \
+        -e 's/(\[User: ).*?\]/\1[sed145-user]]/g' \
+        -e 's/name=[^,]*, externalName=[^,]*, firstName=[^,]*, lastName=[^,]*, email=[^,]*, active=/name=[sed146], externalName=[sed146], firstName=[sed146], lastName=[sed146], email=[sed146], active=/g' \
+        -e 's/(ondemand-1_Worker-)264/\1[sed147-i]/g' \
 
+
+        #-e 's/name=[^,]*, externalName=.*?, firstName=.*?, lastName=.*?, email=.*?\@.*?, active=/name=[sed146], externalName=[sed146], firstName=[sed146], lastName=[sed146], email=[sed146]@[sed146], active=/g' \
 #     10 npm ERR! missing: b@file:../b, required by a@[sed54]
 #     10 [sed41] --- npm ERR! missing: b@^[sed54], required by a@[sed54]
 #     10 [sed41] --- npm ERR! missing: feed@[sed54], required by extraneous-node-modules

@@ -223,6 +223,7 @@ JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS" bash <(curl -k -s -L https://detect.synop
     --detect.detector.search.depth=200 \
     --detect.project.codelocation.unmap=true \
 \
+    --detect.blackduck.signature.scanner.arguments="--scheme https --host sup-pjalajas-2.dc1.lan" 
 \
 
 

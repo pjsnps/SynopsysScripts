@@ -1,0 +1,67 @@
+#AUTHOR: pjalajas@synopsys.com
+#LICENSE: SPDX Apache-2.0
+#DATE: 2021-06-25
+#VERSION: 2107071556Z
+#CHANGE: pj add ERROR: FATAL: for postgres logs
+#
+#PURPOSE if your log matches these, you have a problem, of some sort.  Use like grep --file /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_ErrorStrings.txt
+#
+#USAGE: '\[pjalajas@sup-pjalajas-hub N00862113]\$ (time (parallel "grep -E --file /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_ErrorStrings.txt \{\} | bash /home/pjalajas/dev/git/SynopsysScripts/logging/SnpsSigSup_RedactSed.bash" ::: ./blackduck_bds_logs-20210622T073818/standard/*/app-log/2021-06-22.log | sort | uniq -c | sort -k1nr | head -n 10000000) ) | gzip -9 > ErrorStrings_RedactSed_$(hostname -f)_$(date --utc +%Y%m%d%H%M%SZ%a).out.txt.gz 2>&1'
+#
+#NOTES:
+#no blank lines in this file, they match everything
+#try to eventually make all case-sensitive, for precision and speed
+#whitespace is important, including trailing, used for anchoring grep
+#not sure whether to err on side of including false positives or missing false negatives; kind of leaning toward worst case, include false positives
+#but aggressivelly remove those lines matching under only normal conditions.
+#Some errors are known spurious; should probably remove those, but not sure.
+#Ok to leave customer hostnames etc in, they should be unique enough for this purpose, but need to redact them for external distribution.
+#
+#n(o|')t
+a problem
+An exception occurred
+Bad 
+can not
+cannot
+caught when processing request 
+Caused by
+Connection reset
+Could not
+does not
+ Error 40[034] 
+ ERROR 
+ ERROR:
+ error
+ Error message
+Exception:
+errorCode
+errorMessage
+errorSummary
+exceeded
+exceeds
+#dont want to match # failures=
+#fail
+FAILED
+FAILURE
+ failure 
+ failed
+Failed
+fatal 
+ FATAL:
+ HTTP 1... 40[034] 
+I/O exception 
+invalid
+java.net.SocketException
+missing 
+nested exception
+not found
+RetryExec  
+Retrying request
+rollbacking
+severe
+#time.?out  # timeout timed out time out 
+timeout
+timed out
+unexpected
+Unknown
+wrong

@@ -52,7 +52,7 @@ time (\
     cat {} | \
     bash $SCRIPT_DIR/SnpsSigSup_GreatPrepender.bash \
     " ::: \
-    ./blackduck-staging_bds_logs-20210316T233214/*/app-log/2021-03-1[56].log | \
+    ./blackduck_bds_logs-20210622T073818/standard/hub-registration/app-log/2021-06-22.log | \
     f_summary $1 \
   ) |& \
 tee /dev/tty |& \
