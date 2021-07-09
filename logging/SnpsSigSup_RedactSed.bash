@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2107090423Z
-#CHANGES: pj add ondemand-1_Worker-264
+#VERSION: 2107090427Z
+#CHANGES: pj fix ondemand-1_Worker-264
 
 #PURPOSE: A work in progress, under active development; suggestions, corrections welcome!  Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
@@ -144,7 +144,7 @@ do
         -e "s/(&q=).*?('|&)/\1[sed143-query]\2/g" \
         -e 's/(\[User: ).*?\]/\1[sed145-user]]/g' \
         -e 's/name=[^,]*, externalName=[^,]*, firstName=[^,]*, lastName=[^,]*, email=[^,]*, active=/name=[sed146], externalName=[sed146], firstName=[sed146], lastName=[sed146], email=[sed146], active=/g' \
-        -e 's/(ondemand-1_Worker-)264/\1[sed147-i]/g' \
+        -e 's/(ondemand-1_Worker-)[0-9]+/\1[sed147-i]/g' \
 
 
         #-e 's/name=[^,]*, externalName=.*?, firstName=.*?, lastName=.*?, email=.*?\@.*?, active=/name=[sed146], externalName=[sed146], firstName=[sed146], lastName=[sed146], email=[sed146]@[sed146], active=/g' \
