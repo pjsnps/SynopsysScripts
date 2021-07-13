@@ -3,8 +3,8 @@
 #AUTHOR: pjalajas@synopsys.com
 #DATE: 2021-03-11
 #LICENSE : SPDX Apache-2.0
-#VERSION: 2107090427Z
-#CHANGES: pj fix ondemand-1_Worker-264
+#VERSION: 2107131418Z
+#CHANGES: pj fix and add ondemand-1_Worker, periodic
 
 #PURPOSE: A work in progress, under active development; suggestions, corrections welcome!  Help find needle in gigabyte-log haystack.  Input lines from stdin, outputs varying strings redacted.  Removes datestamps, uuids, etc.  For easier comparison, tabulations, etc. See example outputs below under REFERENCE.
 
@@ -144,9 +144,21 @@ do
         -e "s/(&q=).*?('|&)/\1[sed143-query]\2/g" \
         -e 's/(\[User: ).*?\]/\1[sed145-user]]/g' \
         -e 's/name=[^,]*, externalName=[^,]*, firstName=[^,]*, lastName=[^,]*, email=[^,]*, active=/name=[sed146], externalName=[sed146], firstName=[sed146], lastName=[sed146], email=[sed146], active=/g' \
-        -e 's/(ondemand-1_Worker-)[0-9]+/\1[sed147-i]/g' \
+        -e 's/((ondemand|periodic)-)[0-9]+(_Worker-)[0-9]+/\1[sed147-i]\2[sed147-i]/g' \
+        -e 's/( UTC )[0-9]+ /\1[sed148-i] /g' \
+        -e 's/(at character )[0-9]+/\1[sed149-i]/g' \
+        -e 's#(base)/[0-9]+/[0-9]+(\.?)[0-9]+#\1/[sed150-i]/\1[sed150-i]\2[sed150-i]#g' \
+        -e 's/(bytes at block )[0-9]+/\1[sed151-i]/g' \
+        -e 's/(Batch entry )[0-9]+/\1[sed152-i]/g' \
+        -e 's/( values )\(.*?\) /\1[sed153-s] /g' \
+        -e 's/(pgsql_tmp)[0-9]+(\.?)[0-9]+/\1[sed154-i]\2[sed154-i]/g' \
+        -e 's/[0-9]+\.[0-9]+E[0-9]+( sec)/[sed155-E]\1/g' \
+        -e 's/_[0-9]+( job= )/_[sed156-i]\1/g' \
+        -e 's/(JobStoreSupport)\$[0-9]+\@[0-9a-f]+/\1[sed157-x]/g'   \
 
-
+     
+#does not exist at character 270
+#CHANGES: pj fix postgres logs 34_bds_logs-20210709T210601/standard/hub-postgresql/postgres-log/2021-07-09.log:[7106baff126a] 2021-07-09 03:24:11.200 UTC 153 ERROR:
         #-e 's/name=[^,]*, externalName=.*?, firstName=.*?, lastName=.*?, email=.*?\@.*?, active=/name=[sed146], externalName=[sed146], firstName=[sed146], lastName=[sed146], email=[sed146]@[sed146], active=/g' \
 #     10 npm ERR! missing: b@file:../b, required by a@[sed54]
 #     10 [sed41] --- npm ERR! missing: b@^[sed54], required by a@[sed54]
